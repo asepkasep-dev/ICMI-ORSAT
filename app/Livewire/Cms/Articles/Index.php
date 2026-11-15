@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Article;
 use App\Models\Category;
 use App\Support\ArticleWorkflow;
+use App\Support\Search;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -180,8 +181,7 @@ class Index extends Component
         }
 
         if ($this->q !== '') {
-            $term = '%'.$this->q.'%';
-            $query->where(fn ($w) => $w->where('title', 'like', $term)->orWhere('slug', 'like', $term));
+            Search::apply($query, ['title', 'slug'], $this->q);
         }
 
         if ($this->status !== '') {

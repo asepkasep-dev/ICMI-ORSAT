@@ -87,6 +87,25 @@ class PublicArticleTest extends TestCase
             ->assertDontSee('Rapat Pleno Pengurus');
     }
 
+    public function test_search_treats_wildcard_characters_literally(): void
+    {
+        Article::factory()->published()->create([
+            'user_id' => $this->author->id, 'title' => 'Diskon 50% Iuran Anggota', 'slug' => 'diskon-iuran',
+        ]);
+        Article::factory()->published()->create([
+            'user_id' => $this->author->id, 'title' => 'Rapat Pleno Pengurus', 'slug' => 'rapat-pleno',
+            'excerpt' => 'Ringkasan rapat', 'content' => '<p>Isi rapat pleno.</p>',
+        ]);
+
+        Livewire::test(ArticleIndex::class)
+            ->set('q', '50%')
+            ->assertSee('Diskon 50% Iuran Anggota')
+            ->assertDontSee('Rapat Pleno Pengurus')
+            ->set('q', '_')
+            ->assertDontSee('Diskon 50% Iuran Anggota')
+            ->assertDontSee('Rapat Pleno Pengurus');
+    }
+
     public function test_category_filter_limits_results(): void
     {
         $category = Category::factory()->create(['name' => 'Dakwah', 'slug' => 'dakwah']);

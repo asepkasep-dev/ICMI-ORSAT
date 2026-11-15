@@ -4,6 +4,7 @@ namespace App\Livewire\Public;
 
 use App\Models\Article;
 use App\Models\Category;
+use App\Support\Search;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -60,10 +61,7 @@ class ArticleIndex extends Component
             ->when($featured, fn ($q) => $q->whereKeyNot($featured->id));
 
         if ($this->q !== '') {
-            $term = '%'.$this->q.'%';
-            $query->where(fn ($w) => $w->where('title', 'like', $term)
-                ->orWhere('excerpt', 'like', $term)
-                ->orWhere('content', 'like', $term));
+            Search::apply($query, ['title', 'excerpt', 'content'], $this->q);
         }
 
         if ($this->category !== '') {

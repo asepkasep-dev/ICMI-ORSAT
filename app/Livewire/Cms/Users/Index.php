@@ -5,6 +5,7 @@ namespace App\Livewire\Cms\Users;
 use App\Enums\UserRole;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Support\Search;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Url;
@@ -180,8 +181,7 @@ class Index extends Component
         $query = User::withCount('articles')->orderBy('name');
 
         if ($this->q !== '') {
-            $term = '%'.$this->q.'%';
-            $query->where(fn ($w) => $w->where('name', 'like', $term)->orWhere('email', 'like', $term));
+            Search::apply($query, ['name', 'email'], $this->q);
         }
 
         if ($this->role !== '') {

@@ -17,6 +17,9 @@ class ContentSanitizer
             return '';
         }
 
+        // h1 milik judul halaman; heading dari Trix (h1) diturunkan agar hanya ada satu h1 per halaman.
+        $html = preg_replace('~<(/?)h1(?=[\s>/])~i', '<$1h2', $html);
+
         return trim(self::purifier()->purify($html));
     }
 
@@ -30,7 +33,7 @@ class ContentSanitizer
         if (self::$purifier === null) {
             $config = HTMLPurifier_Config::createDefault();
             $config->set('Cache.SerializerPath', self::cachePath());
-            $config->set('HTML.Allowed', 'p,br,strong,b,em,i,u,s,del,a[href|title|target|rel],ul,ol,li,blockquote,pre,code,h1,h2,h3,h4,div,span,hr');
+            $config->set('HTML.Allowed', 'p,br,strong,b,em,i,u,s,del,a[href|title|target|rel],ul,ol,li,blockquote,pre,code,h2,h3,h4,div,span,hr');
             $config->set('URI.AllowedSchemes', ['http' => true, 'https' => true, 'mailto' => true]);
             $config->set('Attr.AllowedFrameTargets', ['_blank']);
             $config->set('HTML.TargetBlank', true);

@@ -7,6 +7,7 @@ use App\Models\ManagementMember;
 use App\Models\Media;
 use App\Models\OrganizationProfile;
 use App\Support\MediaStorage;
+use App\Support\Search;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -139,8 +140,7 @@ class Index extends Component
         $query = Media::accessibleBy($user)->with('uploader')->latest();
 
         if ($this->q !== '') {
-            $term = '%'.$this->q.'%';
-            $query->where(fn ($w) => $w->where('file_name', 'like', $term)->orWhere('alt', 'like', $term));
+            Search::apply($query, ['file_name', 'alt'], $this->q);
         }
 
         $detail = null;

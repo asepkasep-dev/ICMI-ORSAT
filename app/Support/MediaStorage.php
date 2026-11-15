@@ -46,17 +46,23 @@ class MediaStorage
             $size = $upload->getSize();
         }
 
-        return Media::create([
-            'user_id' => $userId,
-            'file_name' => $originalName,
-            'file_path' => $path,
-            'disk' => 'public',
-            'mime_type' => $mime,
-            'file_size' => $size,
-            'width' => $width,
-            'height' => $height,
-            'alt' => pathinfo($originalName, PATHINFO_FILENAME),
-        ]);
+        try {
+            return Media::create([
+                'user_id' => $userId,
+                'file_name' => $originalName,
+                'file_path' => $path,
+                'disk' => 'public',
+                'mime_type' => $mime,
+                'file_size' => $size,
+                'width' => $width,
+                'height' => $height,
+                'alt' => pathinfo($originalName, PATHINFO_FILENAME),
+            ]);
+        } catch (\Throwable $e) {
+            Storage::disk('public')->delete($path);
+
+            throw $e;
+        }
     }
 
     public static function deleteFile(Media $media): void

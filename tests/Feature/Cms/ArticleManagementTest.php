@@ -6,8 +6,10 @@ use App\Enums\ArticleStatus;
 use App\Livewire\Cms\Articles\Form;
 use App\Livewire\Cms\Articles\Index;
 use App\Livewire\Cms\Dashboard;
+use App\Models\ActivityLog;
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\Media;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -99,6 +101,52 @@ class ArticleManagementTest extends TestCase
             ->assertRedirect(route('cms.articles'));
 
         $this->assertDatabaseHas('articles', ['id' => $article->id, 'title' => 'Judul Diperbarui']);
+    }
+
+    public function test_saving_without_changes_is_not_logged(): void
+    {
+        $writer = User::factory()->create();
+        $article = Article::factory()->create(['user_id' => $writer->id]);
+        $article->categories()->attach(Category::factory()->create());
+        $this->actingAs($writer);
+
+        // Simpan pertama menormalkan konten hasil factory lewat sanitizer.
+        Livewire::test(Form::class, ['article' => $article])->call('save');
+        ActivityLog::query()->delete();
+
+        Livewire::test(Form::class, ['article' => $article->fresh()])->call('save')->assertHasNoErrors();
+        $this->assertDatabaseMissing('activity_logs', ['action' => 'article.updated']);
+
+        Livewire::test(Form::class, ['article' => $article->fresh()])
+            ->set('categories', [(string) Category::factory()->create()->id])
+            ->call('save');
+        $this->assertDatabaseHas('activity_logs', ['action' => 'article.updated', 'subject_id' => $article->id]);
+    }
+
+    public function test_failed_save_rolls_back_and_removes_uploaded_files(): void
+    {
+        Storage::fake('public');
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $this->actingAs($writer);
+        ActivityLog::creating(fn () => throw new \RuntimeException('Gagal simulasi'));
+
+        try {
+            Livewire::test(Form::class)
+                ->set('title', 'Berita Yang Gagal Disimpan')
+                ->set('content', $this->longContent)
+                ->set('categories', [(string) $category->id])
+                ->set('newFeatured', UploadedFile::fake()->image('utama.jpg', 200, 200))
+                ->set('newPhotos', [UploadedFile::fake()->image('pendukung.jpg', 200, 200)])
+                ->call('save');
+            $this->fail('Simpan seharusnya gagal.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Gagal simulasi', $e->getMessage());
+        }
+
+        $this->assertDatabaseMissing('articles', ['title' => 'Berita Yang Gagal Disimpan']);
+        $this->assertSame(0, Media::count());
+        $this->assertSame([], Storage::disk('public')->allFiles('media'));
     }
 
     public function test_writer_cannot_edit_foreign_article(): void

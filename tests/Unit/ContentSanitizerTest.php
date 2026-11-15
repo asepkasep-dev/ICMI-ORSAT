@@ -59,6 +59,16 @@ class ContentSanitizerTest extends TestCase
         $this->assertStringContainsString('<blockquote>Kutipan</blockquote>', $clean);
     }
 
+    public function test_h1_headings_are_demoted_to_h2(): void
+    {
+        $clean = ContentSanitizer::clean('<h1 class="x">Subjudul</h1><H1>Lagi</H1><p>Teks <span>h1</span></p>');
+
+        $this->assertStringNotContainsStringIgnoringCase('<h1', $clean);
+        $this->assertStringContainsString('<h2>Subjudul</h2>', $clean);
+        $this->assertStringContainsString('<h2>Lagi</h2>', $clean);
+        $this->assertStringContainsString('<span>h1</span>', $clean);
+    }
+
     public function test_external_links_get_nofollow_and_blank_target(): void
     {
         $clean = ContentSanitizer::clean('<a href="https://example.com">Tautan</a>');

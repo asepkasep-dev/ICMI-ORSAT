@@ -10,7 +10,9 @@ use App\Models\Media;
 use App\Support\ArticleWorkflow;
 use App\Support\ContentSanitizer;
 use App\Support\MediaStorage;
+use App\Support\Search;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -173,46 +175,62 @@ class Form extends Component
         $this->authorize($this->articleId ? 'update' : 'create', $article);
 
         $slug = $this->slug !== '' ? $this->slug : Article::uniqueSlug($this->title, $this->articleId);
+        $stored = [];
 
-        $featuredMediaId = $this->removeFeatured ? null : $this->featuredMediaId;
-        if ($this->newFeatured) {
-            $featuredMediaId = MediaStorage::store($this->newFeatured)->id;
+        try {
+            DB::transaction(function () use ($article, $user, $slug, &$stored) {
+                $featuredMediaId = $this->removeFeatured ? null : $this->featuredMediaId;
+                if ($this->newFeatured) {
+                    $stored[] = $media = MediaStorage::store($this->newFeatured);
+                    $featuredMediaId = $media->id;
+                }
+
+                $article->fill([
+                    'user_id' => $article->user_id ?? $user->id,
+                    'title' => $this->title,
+                    'slug' => $slug,
+                    'excerpt' => $this->excerpt ?: null,
+                    'content' => ContentSanitizer::clean($this->content),
+                    // Writer tidak mengelola unggulan: pertahankan nilai yang ditetapkan Admin.
+                    'is_featured' => $user->isAdmin() ? $this->is_featured : ($article->is_featured ?? false),
+                    'seo_title' => $this->seo_title ?: null,
+                    'seo_description' => $this->seo_description ?: null,
+                    'featured_media_id' => $featuredMediaId,
+                ]);
+
+                if (! $article->exists) {
+                    $article->status = ArticleStatus::Draft;
+                }
+
+                $changed = $article->isDirty();
+                $article->save();
+                $changed = array_filter($article->categories()->sync($this->categories)) !== [] || $changed;
+
+                $order = $article->photos()->count();
+                foreach ($this->newPhotos as $photo) {
+                    $stored[] = $media = MediaStorage::store($photo);
+                    $article->photos()->attach($media->id, ['show_in_gallery' => true, 'sort_order' => $order++]);
+                }
+
+                if ($changed || $stored !== []) {
+                    ActivityLog::record(
+                        $article->wasRecentlyCreated ? 'article.created' : 'article.updated',
+                        $article,
+                        ($article->wasRecentlyCreated ? 'Membuat' : 'Memperbarui').' berita "'.$article->title.'"'
+                    );
+                }
+            });
+        } catch (\Throwable $e) {
+            foreach ($stored as $media) {
+                MediaStorage::deleteFile($media);
+            }
+
+            throw $e;
         }
 
-        $article->fill([
-            'user_id' => $article->user_id ?? $user->id,
-            'title' => $this->title,
-            'slug' => $slug,
-            'excerpt' => $this->excerpt ?: null,
-            'content' => ContentSanitizer::clean($this->content),
-            // Writer tidak mengelola unggulan: pertahankan nilai yang ditetapkan Admin.
-            'is_featured' => $user->isAdmin() ? $this->is_featured : ($article->is_featured ?? false),
-            'seo_title' => $this->seo_title ?: null,
-            'seo_description' => $this->seo_description ?: null,
-            'featured_media_id' => $featuredMediaId,
-        ]);
-
-        if (! $article->exists) {
-            $article->status = ArticleStatus::Draft;
-        }
-
-        $article->save();
         $this->articleId = $article->id;
-        $article->categories()->sync($this->categories);
-
-        $order = $article->photos()->count();
-        foreach ($this->newPhotos as $photo) {
-            $media = MediaStorage::store($photo);
-            $article->photos()->attach($media->id, ['show_in_gallery' => true, 'sort_order' => $order++]);
-        }
         $this->newPhotos = [];
         $this->newFeatured = null;
-
-        ActivityLog::record(
-            $article->wasRecentlyCreated ? 'article.created' : 'article.updated',
-            $article,
-            ($article->wasRecentlyCreated ? 'Membuat' : 'Memperbarui').' berita "'.$article->title.'"'
-        );
 
         return $article;
     }
@@ -313,9 +331,7 @@ class Form extends Component
             'article' => $this->articleId ? Article::find($this->articleId) : null,
             'mediaOptions' => $this->mediaPickerOpen
                 ? Media::accessibleBy($user)
-                    ->when($this->mediaSearch !== '', fn ($q) => $q->where(fn ($w) => $w
-                        ->where('file_name', 'like', '%'.$this->mediaSearch.'%')
-                        ->orWhere('alt', 'like', '%'.$this->mediaSearch.'%')))
+                    ->when($this->mediaSearch !== '', fn ($q) => Search::apply($q, ['file_name', 'alt'], $this->mediaSearch))
                     ->latest()->limit(24)->get()
                 : collect(),
         ])->layout('components.layouts.cms', [

@@ -4,6 +4,7 @@ namespace App\Livewire\Cms\Categories;
 
 use App\Models\ActivityLog;
 use App\Models\Category;
+use App\Support\Search;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -159,8 +160,7 @@ class Index extends Component
         $query = Category::withCount('articles')->orderBy('name');
 
         if ($this->q !== '') {
-            $term = '%'.$this->q.'%';
-            $query->where(fn ($w) => $w->where('name', 'like', $term)->orWhere('slug', 'like', $term));
+            Search::apply($query, ['name', 'slug'], $this->q);
         }
 
         return view('livewire.cms.categories.index', [
