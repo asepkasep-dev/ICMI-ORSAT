@@ -14,10 +14,10 @@ Di seluruh dokumen, `domain-anda.or.id` adalah **contoh**. Ganti dengan domain r
 
 | Komponen | Versi minimum | Catatan |
 |---|---|---|
-| PHP | 8.2 (disarankan 8.3/8.4) | Ekstensi: `bcmath`, `ctype`, `curl`, `dom`, `fileinfo`, `gd`, `intl`, `mbstring`, `openssl`, `pdo_mysql`, `tokenizer`, `xml`, `zip` |
+| PHP | 8.3 (disarankan 8.4) | Ekstensi: `bcmath`, `ctype`, `curl`, `dom`, `fileinfo`, `gd`, `intl`, `mbstring`, `openssl`, `pdo_mysql`, `tokenizer`, `xml`, `zip` |
 | MySQL / MariaDB | MySQL 8.0 / MariaDB 10.6 | Charset `utf8mb4` |
 | Composer | 2.x | Bisa dijalankan di komputer lokal bila hosting tidak menyediakan |
-| Node.js | 20+ | **Hanya** untuk membangun aset (`npm run build`); tidak dibutuhkan di server |
+| Node.js | 22.12+ | **Hanya** untuk membangun aset (`npm run build`); tidak dibutuhkan di server |
 | Cron | wajib | Untuk publikasi terjadwal dan cadangan harian |
 | HTTPS | wajib | Let's Encrypt / AutoSSL (gratis) |
 
@@ -112,7 +112,7 @@ itu berisiko membuka `.env` dan kode sumber ke publik.
 
 ### A.3 Pilih versi PHP
 
-Di **MultiPHP Manager**, pilih PHP 8.2 atau lebih baru untuk domain tersebut. Di
+Di **MultiPHP Manager**, pilih PHP 8.3 atau lebih baru untuk domain tersebut. Di
 **MultiPHP INI Editor** atur `upload_max_filesize = 8M`, `post_max_size = 12M`,
 `memory_limit = 256M`.
 

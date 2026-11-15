@@ -6,7 +6,7 @@
         ['no' => 3, 'name' => 'Content Management System', 'desc' => 'CRUD berita, editor, kategori, media, workflow publikasi.', 'done' => true],
         ['no' => 4, 'name' => 'Organization Profile', 'desc' => 'Sejarah, visi misi, sambutan, pengurus, pengaturan.', 'done' => true],
         ['no' => 5, 'name' => 'Public Website & SEO', 'desc' => 'Integrasi konten publik, pencarian, galeri, SEO.', 'done' => true],
-        ['no' => 6, 'name' => 'Testing & Deployment', 'desc' => 'Pengujian menyeluruh, backup, deployment, pelatihan.', 'done' => false],
+        ['no' => 6, 'name' => 'Testing & Deployment', 'desc' => 'Pengujian, backup/pemulihan, panduan deployment dan pelatihan.', 'done' => true],
     ];
     $activityMeta = static fn (string $action): array => match (true) {
         str_contains($action, 'published') => ['bg' => 'bg-gold-100 text-gold-700', 'path' => 'M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5'],
@@ -232,8 +232,9 @@
             <div class="rounded-3xl border border-forest-100 bg-white p-7 shadow-sm">
                 <div class="flex items-center justify-between gap-4">
                     <h3 class="font-display text-lg font-bold text-forest-950">Progres Pengembangan</h3>
-                    <x-ui.badge color="gold">Milestone 5 selesai</x-ui.badge>
+                    <x-ui.badge color="gold">Milestone 6 selesai</x-ui.badge>
                 </div>
+                <p class="mt-3 text-xs leading-relaxed text-slate-500">Kesiapan teknis dan panduan selesai. Deployment dan pelatihan langsung menunggu hosting serta domain resmi.</p>
                 <ol class="mt-6 space-y-0">
                     @foreach ($milestones as $m)
                         <li class="relative flex gap-4 pb-6 last:pb-0">
