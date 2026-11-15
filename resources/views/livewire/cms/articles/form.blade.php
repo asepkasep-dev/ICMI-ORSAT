@@ -215,7 +215,7 @@
                     </div>
                 @endif
                 <x-ui.file-upload name="newPhotos" label="Unggah foto pendukung" :multiple="true" wire:model="newPhotos"
-                                  hint="Foto otomatis masuk galeri publik setelah berita terbit."/>
+                                  :hint="\App\Support\MediaStorage::hint().' Foto otomatis masuk galeri publik setelah berita terbit.'"/>
                 <div wire:loading wire:target="newPhotos" class="text-xs font-medium text-forest-600">Mengunggah…</div>
                 @error('newPhotos.*')
                     <p class="text-xs font-medium text-red-600">{{ $message }}</p>

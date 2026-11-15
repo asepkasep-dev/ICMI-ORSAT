@@ -4,6 +4,7 @@ namespace Tests\Feature\Cms;
 
 use App\Livewire\Cms\Media\Index;
 use App\Models\Article;
+use App\Models\ManagementMember;
 use App\Models\Media;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,6 +71,37 @@ class MediaLibraryTest extends TestCase
             ->assertHasErrors(['uploads.0']);
 
         $this->assertSame(0, Media::count());
+    }
+
+    public function test_upload_limits_follow_configuration(): void
+    {
+        Storage::fake('public');
+        config(['icmi.uploads.max_kb' => 512, 'icmi.uploads.max_files' => 2]);
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(Index::class)
+            ->assertSee('maksimal 512 KB per file')
+            ->assertSee('hingga 2 file sekaligus')
+            ->set('uploads', [UploadedFile::fake()->image('sedang.jpg', 100, 100)->size(1024)])
+            ->assertHasErrors(['uploads.0']);
+
+        Livewire::test(Index::class)
+            ->set('uploads', [
+                UploadedFile::fake()->image('a.jpg', 100, 100),
+                UploadedFile::fake()->image('b.jpg', 100, 100),
+                UploadedFile::fake()->image('c.jpg', 100, 100),
+            ])
+            ->assertHasErrors(['uploads']);
+
+        $this->assertSame(0, Media::count());
+
+        config(['icmi.uploads.max_kb' => 4096]);
+        Livewire::test(Index::class)
+            ->assertSee('maksimal 4 MB per file')
+            ->set('uploads', [UploadedFile::fake()->image('besar.jpg', 100, 100)->size(3072)])
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, Media::count());
     }
 
     public function test_writer_sees_only_accessible_media(): void
@@ -161,6 +193,28 @@ class MediaLibraryTest extends TestCase
         $this->assertDatabaseHas('media', ['id' => $media->id]);
         Storage::disk('public')->assertExists($media->file_path);
         $this->assertTrue($article->exists);
+    }
+
+    public function test_pengurus_photo_in_use_cannot_be_deleted(): void
+    {
+        Storage::fake('public');
+        $admin = User::factory()->admin()->create();
+        $media = $this->mediaFor($admin);
+        Storage::disk('public')->put($media->file_path, 'fake-image-bytes');
+        ManagementMember::create(['name' => 'Fulan', 'position' => 'Ketua', 'photo_media_id' => $media->id]);
+        $this->actingAs($admin);
+
+        $this->assertSame(1, $media->usageCount());
+
+        Livewire::test(Index::class)
+            ->call('openDetail', $media->id)
+            ->assertSee('Foto pengurus')
+            ->call('confirmDelete', $media->id)
+            ->assertSet('deleteId', null)
+            ->assertDispatched('toast', type: 'error');
+
+        $this->assertDatabaseHas('media', ['id' => $media->id]);
+        Storage::disk('public')->assertExists($media->file_path);
     }
 
     public function test_unused_media_is_deleted_with_file(): void

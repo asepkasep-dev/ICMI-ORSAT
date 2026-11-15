@@ -2,7 +2,7 @@
     'name',
     'label',
     'multiple' => false,
-    'hint' => 'JPG, PNG, atau WebP — maksimal 2 MB per file.',
+    'hint' => null,
 ])
 
 <div x-data="{ names: [] }" {{ $attributes->only('class') }}>
@@ -10,7 +10,7 @@
     <label class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-forest-200 bg-forest-50/50 px-6 py-8 text-center transition hover:border-forest-400 hover:bg-forest-50">
         <svg class="h-7 w-7 text-forest-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
         <span class="text-sm font-semibold text-forest-800">Klik untuk memilih gambar</span>
-        <span class="text-xs text-slate-400">{{ $hint }}</span>
+        <span class="text-xs text-slate-400">{{ $hint ?? \App\Support\MediaStorage::hint() }}</span>
         <input type="file" name="{{ $name }}{{ $multiple ? '[]' : '' }}" id="{{ $name }}"
                accept="image/jpeg,image/png,image/webp" @if($multiple) multiple @endif class="sr-only"
                x-on:change="names = Array.from($event.target.files).map(f => f.name)"

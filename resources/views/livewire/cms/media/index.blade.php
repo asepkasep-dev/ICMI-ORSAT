@@ -5,7 +5,7 @@
     <div class="rounded-2xl border border-forest-100 bg-white p-6 shadow-sm">
         <div class="relative">
             <x-ui.file-upload name="uploads" label="Unggah gambar baru" :multiple="true" wire:model="uploads"
-                              hint="JPG, PNG, atau WebP — maksimal 2 MB per file. Bisa pilih beberapa sekaligus."/>
+                              :hint="\App\Support\MediaStorage::hint().' Bisa pilih hingga '.config('icmi.uploads.max_files').' file sekaligus.'"/>
             <div wire:loading wire:target="uploads"
                  class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/90 backdrop-blur-sm">
                 <svg class="h-8 w-8 animate-spin text-forest-600" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"/></svg>

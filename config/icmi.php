@@ -12,6 +12,13 @@ return [
     // Produksi harus false — data resmi dikelola melalui CMS (PRD §12).
     'demo_mode' => (bool) env('ICMI_DEMO_MODE', false),
 
+    // Batas unggah gambar (PRD §5.5). Di atas 12 MB, batas upload sementara Livewire
+    // (livewire.temporary_file_upload.rules) dan upload_max_filesize PHP juga harus dinaikkan.
+    'uploads' => [
+        'max_kb' => (int) env('UPLOAD_MAX_KB', 2048),
+        'max_files' => (int) env('UPLOAD_MAX_FILES', 10),
+    ],
+
     // Password awal akun seeder; wajib di-override lewat env sebelum produksi (PRD §9).
     'seed' => [
         'admin_password' => env('SEED_ADMIN_PASSWORD') ?: 'password',

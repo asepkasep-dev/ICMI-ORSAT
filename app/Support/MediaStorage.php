@@ -13,6 +13,19 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class MediaStorage
 {
+    public static function rules(): array
+    {
+        return ['image', 'mimes:jpg,jpeg,png,webp', 'max:'.config('icmi.uploads.max_kb')];
+    }
+
+    public static function hint(): string
+    {
+        $kb = (int) config('icmi.uploads.max_kb');
+        $size = $kb >= 1024 ? rtrim(rtrim(number_format($kb / 1024, 1, ',', ''), '0'), ',').' MB' : $kb.' KB';
+
+        return 'JPG, PNG, atau WebP — maksimal '.$size.' per file.';
+    }
+
     public static function store(UploadedFile|TemporaryUploadedFile $upload, ?int $userId = null): Media
     {
         $userId ??= auth()->id();

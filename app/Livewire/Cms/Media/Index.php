@@ -3,7 +3,9 @@
 namespace App\Livewire\Cms\Media;
 
 use App\Models\ActivityLog;
+use App\Models\ManagementMember;
 use App\Models\Media;
+use App\Models\OrganizationProfile;
 use App\Support\MediaStorage;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -34,8 +36,9 @@ class Index extends Component
     public function updatedUploads(): void
     {
         $this->validate([
-            'uploads.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ], [], ['uploads.*' => 'gambar']);
+            'uploads' => ['array', 'max:'.config('icmi.uploads.max_files')],
+            'uploads.*' => MediaStorage::rules(),
+        ], [], ['uploads' => 'unggahan', 'uploads.*' => 'gambar']);
 
         $count = 0;
 
@@ -147,8 +150,10 @@ class Index extends Component
             $detail = Media::with(['uploader', 'articles' => fn ($q) => $q->withTrashed(), 'featuredIn' => fn ($q) => $q->withTrashed()])->find($this->detailId);
 
             if ($detail) {
-                $usages = $detail->articles->map(fn ($a) => ['title' => $a->title, 'type' => 'Foto pendukung'])
-                    ->merge($detail->featuredIn->map(fn ($a) => ['title' => $a->title, 'type' => 'Gambar utama']));
+                $usages = $detail->articles->toBase()->map(fn ($a) => ['title' => $a->title, 'type' => 'Foto pendukung'])
+                    ->merge($detail->featuredIn->map(fn ($a) => ['title' => $a->title, 'type' => 'Gambar utama']))
+                    ->merge(ManagementMember::where('photo_media_id', $detail->id)->get()->map(fn ($m) => ['title' => $m->name, 'type' => 'Foto pengurus']))
+                    ->merge(OrganizationProfile::where('chairman_photo_media_id', $detail->id)->exists() ? [['title' => 'Profil Organisasi', 'type' => 'Foto ketua']] : []);
             }
         }
 

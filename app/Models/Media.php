@@ -42,7 +42,8 @@ class Media extends Model
     {
         return $this->articles()->withTrashed()->count()
             + $this->featuredIn()->withTrashed()->count()
-            + OrganizationProfile::where('chairman_photo_media_id', $this->id)->count();
+            + OrganizationProfile::where('chairman_photo_media_id', $this->id)->count()
+            + ManagementMember::where('photo_media_id', $this->id)->count();
     }
 
     public function scopeAccessibleBy(Builder $query, User $user): Builder

@@ -158,8 +158,9 @@ class Form extends Component
             'seo_title' => ['nullable', 'string', 'max:200'],
             'seo_description' => ['nullable', 'string', 'max:300'],
             'featuredMediaId' => ['nullable', 'integer', 'exists:media,id'],
-            'newFeatured' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'newPhotos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'newFeatured' => ['nullable', ...MediaStorage::rules()],
+            'newPhotos' => ['array', 'max:'.config('icmi.uploads.max_files')],
+            'newPhotos.*' => MediaStorage::rules(),
         ];
     }
 
