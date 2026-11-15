@@ -188,7 +188,7 @@ class ArticleWorkflowTest extends TestCase
         $this->actingAs($writer);
 
         Livewire::test(Index::class)->call('submitReview', $article->id)->assertStatus(403);
-        Livewire::test(Form::class, ['article' => $article])->call('submitReview')->assertStatus(403);
+        Livewire::test(Form::class, ['article' => $article])->assertStatus(403);
 
         $this->assertSame(ArticleStatus::Published, $article->refresh()->status);
     }
@@ -201,7 +201,7 @@ class ArticleWorkflowTest extends TestCase
         $this->actingAs($writer);
 
         Livewire::test(Index::class)->call('publish', $article->id)->assertStatus(403);
-        Livewire::test(Form::class, ['article' => $article])->call('publish')->assertStatus(403);
+        Livewire::test(Form::class, ['article' => $article])->assertStatus(403);
 
         $article->refresh();
         $this->assertSame(ArticleStatus::Scheduled, $article->status);
@@ -246,7 +246,29 @@ class ArticleWorkflowTest extends TestCase
         $this->actingAs($writer);
 
         Livewire::test(Index::class)->assertDontSeeHtml('wire:click="publish('.$article->id.')"');
-        Livewire::test(Form::class, ['article' => $article])->assertDontSeeHtml('wire:click="publish"');
+    }
+
+    public function test_writer_can_only_edit_own_draft_or_revision_articles(): void
+    {
+        $writer = User::factory()->create();
+        $this->actingAs($writer);
+
+        foreach ([ArticleStatus::Draft, ArticleStatus::Revision] as $status) {
+            $article = $this->articleFor($writer, $status);
+            $this->get(route('cms.articles.edit', $article))->assertOk();
+            Livewire::test(Form::class, ['article' => $article])->set('title', 'Judul Revisi '.$status->value)->call('save')->assertHasNoErrors();
+            $this->assertSame('Judul Revisi '.$status->value, $article->refresh()->title);
+        }
+
+        foreach ([ArticleStatus::InReview, ArticleStatus::Scheduled, ArticleStatus::Published, ArticleStatus::Archived] as $status) {
+            $article = $this->articleFor($writer, $status);
+            $this->assertFalse($writer->can('update', $article), $status->value);
+            $this->get(route('cms.articles.edit', $article))->assertForbidden();
+            Livewire::test(Index::class)->assertDontSeeHtml('href="'.route('cms.articles.edit', $article).'"');
+        }
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->get(route('cms.articles.edit', $this->articleFor($writer, ArticleStatus::Published)))->assertOk();
     }
 
     public function test_unauthorized_form_action_does_not_save_changes(): void

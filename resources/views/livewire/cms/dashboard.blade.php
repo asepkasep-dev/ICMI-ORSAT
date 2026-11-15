@@ -201,8 +201,13 @@
                     @else
                         <ul class="mt-5 space-y-2">
                             @foreach ($recentArticles as $article)
+                                @php
+                                    $href = auth()->user()->can('update', $article)
+                                        ? route('cms.articles.edit', $article)
+                                        : ($article->isPublished() ? route('articles.show', $article) : route('cms.articles'));
+                                @endphp
                                 <li wire:key="recent-{{ $article->id }}">
-                                    <a href="{{ route('cms.articles.edit', $article) }}"
+                                    <a href="{{ $href }}"
                                        class="flex items-center gap-3.5 rounded-xl border border-transparent px-2 py-2.5 transition hover:border-forest-100 hover:bg-forest-50/60">
                                         @if ($article->featuredMedia)
                                             <img src="{{ $article->featuredMedia->url() }}" alt="" class="h-12 w-16 shrink-0 rounded-lg object-cover">

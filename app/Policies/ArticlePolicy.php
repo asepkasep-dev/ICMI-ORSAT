@@ -26,7 +26,10 @@ class ArticlePolicy
 
     public function update(User $user, Article $article): bool
     {
-        return $user->isAdmin() || $article->user_id === $user->id;
+        // Setelah diajukan atau tayang, perubahan konten hanya oleh Admin (PRD §5.1 #7).
+        return $user->isAdmin()
+            || ($article->user_id === $user->id
+                && in_array($article->status ?? ArticleStatus::Draft, [ArticleStatus::Draft, ArticleStatus::Revision], true));
     }
 
     public function delete(User $user, Article $article): bool
