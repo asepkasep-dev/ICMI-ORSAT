@@ -8,6 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} — CMS {{ config('icmi.short_name') }}</title>
     <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="{{ config('icmi.logo_url') ?? asset('images/icmi-emblem.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -32,7 +33,7 @@
             <div class="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-5">
                 <x-logo class="h-9 w-9"/>
                 <div class="leading-tight">
-                    <p class="font-display text-sm font-extrabold tracking-tight text-white">ICMI <span class="text-gold-400">Caringin</span></p>
+                    <p class="font-display text-sm font-extrabold tracking-tight text-white"><x-brand-name accent="text-gold-400"/></p>
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-forest-300">Content Management</p>
                 </div>
                 <button type="button" @click="sidebarOpen = false" class="ml-auto rounded-lg p-1.5 text-forest-300 transition hover:bg-white/10 hover:text-white lg:hidden" aria-label="Tutup sidebar">
@@ -55,13 +56,13 @@
                     <x-cms.nav-link route="cms.media" label="Media Library" icon="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
                 </div>
 
-                <div class="space-y-1">
-                    <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-forest-400">Organisasi</p>
-                    <x-cms.nav-link route="cms.profile" label="Profil Organisasi" icon="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z"/>
-                    <x-cms.nav-link route="cms.management" label="Struktur Pengurus" icon="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>
-                </div>
-
                 @if ($user->isAdmin())
+                    <div class="space-y-1">
+                        <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-forest-400">Organisasi</p>
+                        <x-cms.nav-link route="cms.profile" label="Profil Organisasi" icon="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z"/>
+                        <x-cms.nav-link route="cms.management" label="Struktur Pengurus" icon="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>
+                    </div>
+
                     <div class="space-y-1">
                         <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-forest-400">Administrasi</p>
                         <x-cms.nav-link route="cms.users" label="Manajemen Pengguna" icon="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"/>

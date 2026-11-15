@@ -11,7 +11,7 @@
                 <div class="max-w-xl">
                     <h1 class="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Berita &amp; Artikel</h1>
                     <p class="mt-4 text-sm leading-relaxed text-forest-100/80 sm:text-base">
-                        Publikasi resmi kegiatan, program, dan gagasan ICMI Kecamatan Caringin.
+                        Publikasi resmi kegiatan, program, dan gagasan {{ config('icmi.name') }}.
                     </p>
                 </div>
                 <div class="relative w-full max-w-md">

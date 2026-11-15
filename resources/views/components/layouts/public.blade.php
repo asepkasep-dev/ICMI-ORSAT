@@ -14,10 +14,9 @@
     <meta property="og:description" content="{{ $description ?? config('icmi.description') }}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
-    @if ($ogImage)
-        <meta property="og:image" content="{{ $ogImage }}">
-        <meta name="twitter:card" content="summary_large_image">
-    @endif
+    <meta property="og:image" content="{{ $ogImage ?? asset('images/icmi-logo.png') }}">
+    <meta name="twitter:card" content="{{ $ogImage ? 'summary_large_image' : 'summary' }}">
+    <link rel="icon" href="{{ config('icmi.logo_url') ?? asset('images/icmi-emblem.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -41,7 +40,7 @@
             <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-3">
                 <x-logo class="h-9 w-9"/>
                 <span class="leading-tight">
-                    <span class="block font-display text-base font-extrabold tracking-tight text-forest-950">ICMI <span class="text-gold-600">Caringin</span></span>
+                    <span class="block font-display text-base font-extrabold tracking-tight text-forest-950"><x-brand-name accent="text-gold-600"/></span>
                     <span class="block text-[10px] font-semibold uppercase tracking-[0.16em] text-forest-500">Website Resmi</span>
                 </span>
             </a>
@@ -151,7 +150,9 @@
 
                 <div class="lg:col-span-2">
                     <h3 class="font-display text-sm font-bold uppercase tracking-wider text-gold-400">Media Sosial</h3>
-                    <p class="mt-4 text-sm text-forest-200/60">Tautan media sosial resmi akan ditampilkan setelah data organisasi tersedia.</p>
+                    <x-social-links dark :placeholders="false" class="mt-4">
+                        <p class="mt-4 text-sm text-forest-200/60">Tautan media sosial resmi akan ditampilkan setelah data organisasi tersedia.</p>
+                    </x-social-links>
                 </div>
             </div>
 

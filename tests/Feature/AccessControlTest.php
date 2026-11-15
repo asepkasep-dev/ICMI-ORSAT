@@ -47,25 +47,34 @@ class AccessControlTest extends TestCase
     {
         $writer = User::factory()->create();
 
-        $this->actingAs($writer)->get('/cms/pengguna')->assertForbidden();
-        $this->actingAs($writer)->get('/cms/pengaturan')->assertForbidden();
+        foreach (['/cms/pengguna', '/cms/pengaturan', '/cms/profil-organisasi', '/cms/pengurus'] as $url) {
+            $this->actingAs($writer)->get($url)->assertForbidden();
+        }
     }
 
     public function test_admin_can_access_admin_only_pages(): void
     {
         $admin = User::factory()->admin()->create();
 
-        $this->actingAs($admin)->get('/cms/pengguna')->assertOk();
-        $this->actingAs($admin)->get('/cms/pengaturan')->assertOk();
+        foreach (['/cms/pengguna', '/cms/pengaturan', '/cms/profil-organisasi', '/cms/pengurus'] as $url) {
+            $this->actingAs($admin)->get($url)->assertOk();
+        }
     }
 
     public function test_both_roles_can_access_content_modules(): void
     {
         foreach ([User::factory()->admin()->create(), User::factory()->create()] as $user) {
-            foreach (['/cms/berita', '/cms/media', '/cms/profil-organisasi', '/cms/pengurus'] as $url) {
+            foreach (['/cms/berita', '/cms/media'] as $url) {
                 $this->actingAs($user)->get($url)->assertOk();
             }
         }
+    }
+
+    public function test_writer_does_not_see_organization_menu(): void
+    {
+        $this->actingAs(User::factory()->create())->get('/cms/dashboard')
+            ->assertDontSee('Struktur Pengurus')
+            ->assertDontSee('Pengaturan Website');
     }
 
     public function test_categories_module_is_admin_only(): void

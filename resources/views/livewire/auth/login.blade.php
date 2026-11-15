@@ -20,7 +20,7 @@
             <a href="{{ route('home') }}" class="inline-flex items-center gap-3">
                 <x-logo class="h-11 w-11"/>
                 <span class="leading-tight">
-                    <span class="block font-display text-lg font-extrabold text-white">ICMI <span class="text-gold-400">Caringin</span></span>
+                    <span class="block font-display text-lg font-extrabold text-white"><x-brand-name accent="text-gold-400"/></span>
                     <span class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-forest-300">Website Resmi</span>
                 </span>
             </a>
@@ -47,7 +47,7 @@
             <div class="mb-10 flex items-center gap-3 lg:hidden">
                 <x-logo class="h-10 w-10"/>
                 <div class="leading-tight">
-                    <p class="font-display text-base font-extrabold text-forest-950">ICMI <span class="text-gold-600">Caringin</span></p>
+                    <p class="font-display text-base font-extrabold text-forest-950"><x-brand-name accent="text-gold-600"/></p>
                     <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-forest-500">Content Management System</p>
                 </div>
             </div>

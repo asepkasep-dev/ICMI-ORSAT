@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SiteSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,7 +44,8 @@ class Media extends Model
         return $this->articles()->withTrashed()->count()
             + $this->featuredIn()->withTrashed()->count()
             + OrganizationProfile::where('chairman_photo_media_id', $this->id)->count()
-            + ManagementMember::where('photo_media_id', $this->id)->count();
+            + ManagementMember::where('photo_media_id', $this->id)->count()
+            + Setting::where('key', SiteSettings::LOGO)->where('value', (string) $this->id)->count();
     }
 
     public function scopeAccessibleBy(Builder $query, User $user): Builder

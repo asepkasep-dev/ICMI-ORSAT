@@ -7,7 +7,7 @@
     ])->values()->all();
 @endphp
 
-<x-layouts.public title="Galeri Foto" description="Dokumentasi foto kegiatan ICMI Kecamatan Caringin yang bersumber dari berita yang telah diterbitkan.">
+<x-layouts.public title="Galeri Foto" description="Dokumentasi foto kegiatan {{ config('icmi.name') }} yang bersumber dari berita yang telah diterbitkan.">
     <section class="relative overflow-hidden bg-forest-950">
         <div class="pointer-events-none absolute inset-0" aria-hidden="true">
             <div class="absolute inset-0 bg-gradient-to-br from-forest-950 via-forest-900 to-forest-800"></div>

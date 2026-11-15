@@ -61,7 +61,7 @@
                             <x-logo class="h-28 w-28 drop-shadow-[0_8px_24px_rgba(213,180,106,0.25)]"/>
                         </div>
                         <p class="mt-6 text-center font-display text-lg font-bold text-white">{{ config('icmi.short_name') }}</p>
-                        <p class="mt-1 text-center text-xs uppercase tracking-[0.2em] text-gold-300/90">Kecamatan Caringin</p>
+                        <p class="mt-1 text-center text-xs uppercase tracking-[0.2em] text-gold-300/90">{{ \Illuminate\Support\Str::after(config('icmi.name'), ' ') }}</p>
                         <div class="mt-6 grid grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-forest-950/40 py-4 text-center">
                             <div>
                                 <p class="font-display text-xl font-extrabold text-gold-400">{{ $stats['articles'] }}</p>
@@ -122,7 +122,7 @@
                     <div class="flex items-center gap-4">
                         <x-ui.avatar :name="$profile->chairman_name ?? 'Ketua ICMI'" :src="$profile->chairmanPhoto?->url()" class="h-16 w-16 text-xl"/>
                         <div>
-                            <p class="font-display text-base font-bold text-forest-950">{{ $profile->chairman_name ?? 'Ketua ICMI Kecamatan Caringin' }}</p>
+                            <p class="font-display text-base font-bold text-forest-950">{{ $profile->chairman_name ?? 'Ketua '.config('icmi.name') }}</p>
                             <p class="text-sm text-slate-500">Masa Bakti {{ config('icmi.term') }}</p>
                         </div>
                     </div>

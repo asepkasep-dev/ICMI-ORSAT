@@ -1,4 +1,4 @@
-<x-layouts.public title="Profil Organisasi" description="Sejarah, visi, misi, tujuan, dan sambutan Ketua ICMI Kecamatan Caringin masa bakti {{ config('icmi.term') }}.">
+<x-layouts.public title="Profil Organisasi" description="Sejarah, visi, misi, tujuan, dan sambutan Ketua {{ config('icmi.name') }} masa bakti {{ config('icmi.term') }}.">
     <section class="relative overflow-hidden bg-forest-950">
         <div class="pointer-events-none absolute inset-0" aria-hidden="true">
             <div class="absolute inset-0 bg-gradient-to-br from-forest-950 via-forest-900 to-forest-800"></div>
@@ -111,7 +111,7 @@
                 <div class="mt-8 flex items-center gap-4">
                     <x-ui.avatar :name="$profile->chairman_name ?? 'Ketua ICMI'" :src="$profile->chairmanPhoto?->url()" class="h-20 w-20 text-2xl"/>
                     <div>
-                        <p class="font-display text-lg font-bold text-forest-950">{{ $profile->chairman_name ?? 'Ketua ICMI Kecamatan Caringin' }}</p>
+                        <p class="font-display text-lg font-bold text-forest-950">{{ $profile->chairman_name ?? 'Ketua '.config('icmi.name') }}</p>
                         <p class="text-sm text-slate-500">Masa Bakti {{ config('icmi.term') }}</p>
                     </div>
                 </div>

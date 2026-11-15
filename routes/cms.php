@@ -4,7 +4,10 @@ use App\Livewire\Cms\Articles\Form;
 use App\Livewire\Cms\Articles\Index;
 use App\Livewire\Cms\Categories\Index as CategoryIndex;
 use App\Livewire\Cms\Dashboard;
+use App\Livewire\Cms\Management\Index as ManagementIndex;
 use App\Livewire\Cms\Media\Index as MediaIndex;
+use App\Livewire\Cms\Profile\Edit as ProfileEdit;
+use App\Livewire\Cms\Settings\Edit as SettingsEdit;
 use App\Livewire\Cms\Users\Index as UserIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -20,27 +23,14 @@ Route::middleware(['auth', 'active'])
 
         Route::get('/media', MediaIndex::class)->name('media');
 
-        Route::get('/profil-organisasi', fn () => view('cms.coming-soon', [
-            'title' => 'Profil Organisasi',
-            'milestone' => 'Milestone 4 — Organization Profile',
-            'description' => 'Pengelolaan sejarah, visi, misi, tujuan, dan sambutan Ketua.',
-        ]))->name('profile');
-
-        Route::get('/pengurus', fn () => view('cms.coming-soon', [
-            'title' => 'Struktur Pengurus',
-            'milestone' => 'Milestone 4 — Organization Profile',
-            'description' => 'Pengelolaan data pengurus, jabatan, bidang, foto, dan urutan tampilan.',
-        ]))->name('management');
-
         Route::middleware('role:admin')->group(function () {
             Route::get('/kategori', CategoryIndex::class)->name('categories');
 
+            Route::get('/profil-organisasi', ProfileEdit::class)->name('profile');
+            Route::get('/pengurus', ManagementIndex::class)->name('management');
+
             Route::get('/pengguna', UserIndex::class)->name('users');
 
-            Route::get('/pengaturan', fn () => view('cms.coming-soon', [
-                'title' => 'Pengaturan Website',
-                'milestone' => 'Milestone 4 — Organization Profile',
-                'description' => 'Identitas website, kontak, media sosial, dan SEO dasar.',
-            ]))->name('settings');
+            Route::get('/pengaturan', SettingsEdit::class)->name('settings');
         });
     });

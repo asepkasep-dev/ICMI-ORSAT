@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApplySiteSettings;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Foundation\Application;
@@ -13,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [ApplySiteSettings::class]);
+
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
             'role' => EnsureRole::class,

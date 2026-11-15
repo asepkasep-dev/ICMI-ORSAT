@@ -27,7 +27,7 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.data('trixEditor', () => ({
+    Alpine.data('trixEditor', (property = 'content') => ({
         timer: null,
         init() {
             const editor = this.$el.querySelector('trix-editor');
@@ -38,7 +38,7 @@ document.addEventListener('alpine:init', () => {
             editor.addEventListener('trix-change', () => {
                 clearTimeout(this.timer);
                 this.timer = setTimeout(() => {
-                    this.$wire.set('content', editor.innerHTML, false);
+                    this.$wire.set(property, editor.innerHTML, false);
                 }, 400);
             });
         },

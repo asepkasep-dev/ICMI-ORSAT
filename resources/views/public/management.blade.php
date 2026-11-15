@@ -1,4 +1,4 @@
-<x-layouts.public title="Struktur Kepengurusan" description="Susunan pengurus ICMI Kecamatan Caringin masa bakti {{ config('icmi.term') }}: ketua, wakil ketua, sekretaris, bendahara, dan bidang-bidang.">
+<x-layouts.public title="Struktur Kepengurusan" description="Susunan pengurus {{ config('icmi.name') }} masa bakti {{ config('icmi.term') }}: ketua, wakil ketua, sekretaris, bendahara, dan bidang-bidang.">
     <section class="relative overflow-hidden bg-forest-950">
         <div class="pointer-events-none absolute inset-0" aria-hidden="true">
             <div class="absolute inset-0 bg-gradient-to-br from-forest-950 via-forest-900 to-forest-800"></div>

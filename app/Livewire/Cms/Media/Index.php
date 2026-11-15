@@ -6,8 +6,10 @@ use App\Models\ActivityLog;
 use App\Models\ManagementMember;
 use App\Models\Media;
 use App\Models\OrganizationProfile;
+use App\Models\Setting;
 use App\Support\MediaStorage;
 use App\Support\Search;
+use App\Support\SiteSettings;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -153,7 +155,8 @@ class Index extends Component
                 $usages = $detail->articles->toBase()->map(fn ($a) => ['title' => $a->title, 'type' => 'Foto pendukung'])
                     ->merge($detail->featuredIn->map(fn ($a) => ['title' => $a->title, 'type' => 'Gambar utama']))
                     ->merge(ManagementMember::where('photo_media_id', $detail->id)->get()->map(fn ($m) => ['title' => $m->name, 'type' => 'Foto pengurus']))
-                    ->merge(OrganizationProfile::where('chairman_photo_media_id', $detail->id)->exists() ? [['title' => 'Profil Organisasi', 'type' => 'Foto ketua']] : []);
+                    ->merge(OrganizationProfile::where('chairman_photo_media_id', $detail->id)->exists() ? [['title' => 'Profil Organisasi', 'type' => 'Foto ketua']] : [])
+                    ->merge(Setting::get(SiteSettings::LOGO) === (string) $detail->id ? [['title' => 'Pengaturan Website', 'type' => 'Logo website']] : []);
             }
         }
 
