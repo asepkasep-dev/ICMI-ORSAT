@@ -158,6 +158,47 @@ class BackupRestoreTest extends TestCase
         $this->assertSame(1, User::count());
     }
 
+    public function test_restore_logs_everyone_out(): void
+    {
+        config(['session.driver' => 'database']);
+        $path = app(SiteBackup::class)->create();
+        $user = User::factory()->create();
+        DB::table('sessions')->insert([
+            'id' => 'sesi-lama', 'user_id' => $user->id, 'ip_address' => '127.0.0.1',
+            'user_agent' => 'test', 'payload' => '', 'last_activity' => now()->timestamp,
+        ]);
+
+        $this->artisan('icmi:restore', ['file' => $path, '--force' => true, '--no-safety-backup' => true])
+            ->assertSuccessful();
+
+        $this->assertSame(0, DB::table('sessions')->count());
+    }
+
+    public function test_restore_leaves_site_online_afterwards(): void
+    {
+        $path = app(SiteBackup::class)->create();
+
+        $this->artisan('icmi:restore', ['file' => $path, '--force' => true, '--no-safety-backup' => true])
+            ->assertSuccessful();
+
+        $this->assertFalse($this->app->isDownForMaintenance());
+    }
+
+    public function test_restore_keeps_site_down_if_it_was_already_in_maintenance(): void
+    {
+        $path = app(SiteBackup::class)->create();
+        $this->artisan('down')->assertSuccessful();
+
+        try {
+            $this->artisan('icmi:restore', ['file' => $path, '--force' => true, '--no-safety-backup' => true])
+                ->assertSuccessful();
+
+            $this->assertTrue($this->app->isDownForMaintenance());
+        } finally {
+            $this->artisan('up');
+        }
+    }
+
     public function test_restore_rejects_unsafe_media_paths_before_touching_data(): void
     {
         $path = app(SiteBackup::class)->create();

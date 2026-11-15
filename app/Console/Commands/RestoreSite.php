@@ -61,9 +61,15 @@ class RestoreSite extends Command
             return self::FAILURE;
         }
 
+        $wasDown = app()->isDownForMaintenance();
+
         try {
             if (! $this->option('no-safety-backup')) {
                 $this->line('Cadangan pengaman kondisi saat ini: '.$backup->create('pra-pemulihan'));
+            }
+
+            if (! $wasDown) {
+                $this->callSilently('down');
             }
 
             $backup->restore($path);
@@ -72,9 +78,13 @@ class RestoreSite extends Command
             $this->error('Pemulihan gagal: '.$e->getMessage());
 
             return self::FAILURE;
+        } finally {
+            if (! $wasDown) {
+                $this->callSilently('up');
+            }
         }
 
-        $this->info('Pemulihan selesai. Pengguna perlu masuk kembali bila akunnya berubah.');
+        $this->info('Pemulihan selesai. Semua pengguna perlu masuk kembali.');
 
         return self::SUCCESS;
     }

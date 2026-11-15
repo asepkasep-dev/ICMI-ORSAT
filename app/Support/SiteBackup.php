@@ -126,6 +126,7 @@ class SiteBackup
         }
 
         $zip = $this->open($path);
+        $staging = sys_get_temp_dir().DIRECTORY_SEPARATOR.'icmi-restore-'.bin2hex(random_bytes(6));
 
         try {
             $data = [];
@@ -142,15 +143,35 @@ class SiteBackup
                 $data[$table] = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
             }
 
+            // Media diekstrak lebih dulu agar arsip rusak terdeteksi sebelum data apa pun diubah.
             $media = $this->mediaEntries($zip);
+            File::ensureDirectoryExists($staging);
+            if ($media !== [] && ! $zip->extractTo($staging, array_keys($media))) {
+                throw new RuntimeException('Gagal mengekstrak file media dari cadangan.');
+            }
 
             $this->restoreDatabase($data);
-            $this->restoreMedia($zip, $media);
+            $this->restoreMedia($staging, $media);
         } finally {
             $zip->close();
+            File::deleteDirectory($staging);
         }
 
+        $this->invalidateSessions();
         Cache::flush();
+    }
+
+    /**
+     * ID pengguna di cadangan bisa berbeda dari kondisi sekarang, sehingga sesi lama
+     * dapat menunjuk ke akun lain. Semua pengguna wajib masuk ulang.
+     */
+    private function invalidateSessions(): void
+    {
+        match (config('session.driver')) {
+            'database' => DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))->delete(),
+            'file' => File::delete(File::files(config('session.files'))),
+            default => null,
+        };
     }
 
     /** @param  array<string, list<array<string, mixed>>>  $data */
@@ -204,7 +225,7 @@ class SiteBackup
     }
 
     /** @param  array<string, string>  $entries */
-    private function restoreMedia(ZipArchive $zip, array $entries): void
+    private function restoreMedia(string $staging, array $entries): void
     {
         $disk = Storage::disk('public');
 
@@ -215,7 +236,7 @@ class SiteBackup
         }
 
         foreach ($entries as $name => $relative) {
-            $stream = $zip->getStream($name);
+            $stream = fopen($staging.DIRECTORY_SEPARATOR.$name, 'rb');
             if ($stream === false) {
                 throw new RuntimeException("Gagal membaca {$name} dari cadangan.");
             }
