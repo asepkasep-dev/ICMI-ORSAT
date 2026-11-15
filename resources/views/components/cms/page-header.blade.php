@@ -8,6 +8,6 @@
         @endif
     </div>
     @if (trim($slot))
-        <div class="flex shrink-0 flex-wrap items-center gap-2">{{ $slot }}</div>
+        <div class="flex max-w-full flex-wrap items-center gap-2">{{ $slot }}</div>
     @endif
 </div>

@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('articles:publish-scheduled')->everyMinute();
+Schedule::command('icmi:backup')->dailyAt('02:00');

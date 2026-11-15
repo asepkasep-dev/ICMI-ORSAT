@@ -25,6 +25,16 @@ return [
         'writer_password' => env('SEED_WRITER_PASSWORD') ?: 'password',
     ],
 
+    // Cadangan basis data + media (php artisan icmi:backup). Folder ini tidak dapat diakses publik.
+    'backup' => [
+        'path' => env('BACKUP_PATH') ?: storage_path('app/backups'),
+        'keep' => (int) env('BACKUP_KEEP', 14),
+        'exclude_tables' => [
+            'migrations', 'cache', 'cache_locks', 'sessions',
+            'jobs', 'job_batches', 'failed_jobs', 'password_reset_tokens',
+        ],
+    ],
+
     // Nilai null berarti data resmi belum tersedia (PRD §12 — jangan diisi data rekaan).
     'contact' => [
         'address' => null,
