@@ -91,6 +91,7 @@ class Form extends Component
             'is_featured' => ['boolean'],
             'seo_title' => ['nullable', 'string', 'max:200'],
             'seo_description' => ['nullable', 'string', 'max:300'],
+            'featuredMediaId' => ['nullable', 'integer', 'exists:media,id'],
             'newFeatured' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'newPhotos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
@@ -129,7 +130,8 @@ class Form extends Component
             'slug' => $slug,
             'excerpt' => $this->excerpt ?: null,
             'content' => $this->content,
-            'is_featured' => $user->isAdmin() ? $this->is_featured : false,
+            // Writer tidak mengelola unggulan: pertahankan nilai yang ditetapkan Admin.
+            'is_featured' => $user->isAdmin() ? $this->is_featured : ($article->is_featured ?? false),
             'seo_title' => $this->seo_title ?: null,
             'seo_description' => $this->seo_description ?: null,
             'featured_media_id' => $featuredMediaId,

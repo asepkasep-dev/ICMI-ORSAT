@@ -166,6 +166,44 @@ class ArticleManagementTest extends TestCase
         $this->assertDatabaseHas('articles', ['title' => 'Berita Writer Biasa', 'is_featured' => false]);
     }
 
+    public function test_writer_edit_preserves_featured_flag_set_by_admin(): void
+    {
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $article = Article::factory()->create([
+            'user_id' => $writer->id,
+            'title' => 'Berita Unggulan Writer',
+            'slug' => 'berita-unggulan-writer',
+            'is_featured' => true,
+        ]);
+        $article->categories()->attach($category);
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class, ['article' => $article])
+            ->set('title', 'Judul Baru Tetap Unggulan')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('articles', ['id' => $article->id, 'is_featured' => true]);
+    }
+
+    public function test_invalid_featured_media_id_is_rejected(): void
+    {
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class)
+            ->set('title', 'Berita Dengan Media Invalid')
+            ->set('content', $this->longContent)
+            ->set('categories', [(string) $category->id])
+            ->set('featuredMediaId', 999999)
+            ->call('save')
+            ->assertHasErrors(['featuredMediaId']);
+
+        $this->assertDatabaseMissing('articles', ['title' => 'Berita Dengan Media Invalid']);
+    }
+
     public function test_upload_rejects_non_image_file(): void
     {
         Storage::fake('public');

@@ -12,6 +12,12 @@ return [
     // Produksi harus false — data resmi dikelola melalui CMS (PRD §12).
     'demo_mode' => (bool) env('ICMI_DEMO_MODE', false),
 
+    // Password awal akun seeder; wajib di-override lewat env sebelum produksi (PRD §9).
+    'seed' => [
+        'admin_password' => env('SEED_ADMIN_PASSWORD') ?: 'password',
+        'writer_password' => env('SEED_WRITER_PASSWORD') ?: 'password',
+    ],
+
     // Nilai null berarti data resmi belum tersedia (PRD §12 — jangan diisi data rekaan).
     'contact' => [
         'address' => null,

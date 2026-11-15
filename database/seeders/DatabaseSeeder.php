@@ -11,12 +11,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Akun operasional awal; identitas Admin resmi belum dikonfirmasi (PRD §12).
-        // Password wajib diganti setelah login pertama.
+        // Password awal dari env (SEED_ADMIN_PASSWORD/SEED_WRITER_PASSWORD);
+        // wajib diganti setelah login pertama dan sebelum produksi.
         User::firstOrCreate(
             ['email' => 'admin@icmicaringin.or.id'],
             [
                 'name' => 'Administrator',
-                'password' => 'password',
+                'password' => config('icmi.seed.admin_password'),
                 'role' => UserRole::Admin,
                 'is_active' => true,
             ]
@@ -26,7 +27,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'writer@icmicaringin.or.id'],
             [
                 'name' => 'Penulis ICMI',
-                'password' => 'password',
+                'password' => config('icmi.seed.writer_password'),
                 'role' => UserRole::Writer,
                 'is_active' => true,
             ]
