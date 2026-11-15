@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 class Media extends Model
@@ -21,9 +23,38 @@ class Media extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function articles(): BelongsToMany
+    {
+        return $this->belongsToMany(Article::class)->withPivot(['show_in_gallery', 'sort_order']);
+    }
+
+    public function featuredIn(): HasMany
+    {
+        return $this->hasMany(Article::class, 'featured_media_id');
+    }
+
     public function url(): string
     {
         return Storage::disk($this->disk)->url($this->file_path);
+    }
+
+    public function usageCount(): int
+    {
+        return $this->articles()->withTrashed()->count()
+            + $this->featuredIn()->withTrashed()->count()
+            + OrganizationProfile::where('chairman_photo_media_id', $this->id)->count();
+    }
+
+    public function scopeAccessibleBy(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        return $query->where(fn (Builder $q) => $q
+            ->where('media.user_id', $user->id)
+            ->orWhereHas('articles', fn (Builder $a) => $a->withTrashed()->where('articles.user_id', $user->id))
+            ->orWhereHas('featuredIn', fn (Builder $a) => $a->withTrashed()->where('articles.user_id', $user->id)));
     }
 
     public function scopeGallery(Builder $query): Builder
@@ -32,7 +63,7 @@ class Media extends Model
             ->join('article_media', 'article_media.media_id', '=', 'media.id')
             ->join('articles', 'articles.id', '=', 'article_media.article_id')
             ->where('article_media.show_in_gallery', true)
-            ->where('articles.status', 'published')
+            ->whereIn('articles.status', ['published', 'scheduled'])
             ->whereNotNull('articles.published_at')
             ->where('articles.published_at', '<=', now())
             ->whereNull('articles.deleted_at')

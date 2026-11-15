@@ -2,7 +2,10 @@
 
 use App\Livewire\Cms\Articles\Form;
 use App\Livewire\Cms\Articles\Index;
+use App\Livewire\Cms\Categories\Index as CategoryIndex;
 use App\Livewire\Cms\Dashboard;
+use App\Livewire\Cms\Media\Index as MediaIndex;
+use App\Livewire\Cms\Users\Index as UserIndex;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active'])
@@ -15,17 +18,7 @@ Route::middleware(['auth', 'active'])
         Route::get('/berita/buat', Form::class)->name('articles.create');
         Route::get('/berita/{article}/edit', Form::class)->name('articles.edit');
 
-        Route::get('/kategori', fn () => view('cms.coming-soon', [
-            'title' => 'Kategori Berita',
-            'milestone' => 'Milestone 3 — Content Management System',
-            'description' => 'Pengelolaan kategori berita oleh Admin.',
-        ]))->name('categories');
-
-        Route::get('/media', fn () => view('cms.coming-soon', [
-            'title' => 'Media Library',
-            'milestone' => 'Milestone 3 — Content Management System',
-            'description' => 'Unggah, pilih, dan kelola gambar berita dengan validasi dan optimasi WebP.',
-        ]))->name('media');
+        Route::get('/media', MediaIndex::class)->name('media');
 
         Route::get('/profil-organisasi', fn () => view('cms.coming-soon', [
             'title' => 'Profil Organisasi',
@@ -40,11 +33,9 @@ Route::middleware(['auth', 'active'])
         ]))->name('management');
 
         Route::middleware('role:admin')->group(function () {
-            Route::get('/pengguna', fn () => view('cms.coming-soon', [
-                'title' => 'Manajemen Pengguna',
-                'milestone' => 'Milestone 3 — Content Management System',
-                'description' => 'Pembuatan dan pengelolaan akun Writer oleh Admin.',
-            ]))->name('users');
+            Route::get('/kategori', CategoryIndex::class)->name('categories');
+
+            Route::get('/pengguna', UserIndex::class)->name('users');
 
             Route::get('/pengaturan', fn () => view('cms.coming-soon', [
                 'title' => 'Pengaturan Website',

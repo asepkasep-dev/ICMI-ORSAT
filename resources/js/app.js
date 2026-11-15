@@ -1,4 +1,6 @@
 import './bootstrap';
+import 'trix';
+import 'trix/dist/trix.css';
 
 document.addEventListener('alpine:init', () => {
     Alpine.data('lightbox', (photos) => ({
@@ -22,6 +24,45 @@ document.addEventListener('alpine:init', () => {
         },
         get current() {
             return this.photos[this.index] ?? null;
+        },
+    }));
+
+    Alpine.data('trixEditor', () => ({
+        timer: null,
+        init() {
+            const editor = this.$el.querySelector('trix-editor');
+            if (!editor) return;
+
+            editor.addEventListener('trix-file-accept', (event) => event.preventDefault());
+
+            editor.addEventListener('trix-change', () => {
+                clearTimeout(this.timer);
+                this.timer = setTimeout(() => {
+                    this.$wire.set('content', editor.innerHTML, false);
+                }, 400);
+            });
+        },
+        destroy() {
+            clearTimeout(this.timer);
+        },
+    }));
+
+    Alpine.data('toastHub', () => ({
+        toasts: [],
+        nextId: 1,
+        init() {
+            window.addEventListener('toast', (event) => {
+                this.push(event.detail?.message ?? event.detail?.[0]?.message, event.detail?.type ?? event.detail?.[0]?.type);
+            });
+        },
+        push(message, type = 'success') {
+            if (!message) return;
+            const id = this.nextId++;
+            this.toasts.push({ id, message, type });
+            setTimeout(() => this.dismiss(id), 5200);
+        },
+        dismiss(id) {
+            this.toasts = this.toasts.filter((t) => t.id !== id);
         },
     }));
 });

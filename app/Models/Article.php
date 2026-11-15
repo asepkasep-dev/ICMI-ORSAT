@@ -16,7 +16,7 @@ class Article extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'user_id', 'title', 'slug', 'excerpt', 'content', 'status',
+        'user_id', 'title', 'slug', 'excerpt', 'content', 'status', 'revision_note',
         'published_at', 'is_featured', 'seo_title', 'seo_description', 'featured_media_id',
     ];
 
@@ -58,7 +58,11 @@ class Article extends Model
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', ArticleStatus::Published)
+        // Artikel terjadwal yang sudah lewat waktu tayang tetap tampil walau cron belum berjalan.
+        return $query->where(function (Builder $q) {
+            $q->where('status', ArticleStatus::Published)
+                ->orWhere(fn (Builder $s) => $s->where('status', ArticleStatus::Scheduled));
+        })
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
     }
@@ -70,7 +74,7 @@ class Article extends Model
 
     public function isPublished(): bool
     {
-        return $this->status === ArticleStatus::Published
+        return in_array($this->status, [ArticleStatus::Published, ArticleStatus::Scheduled], true)
             && $this->published_at !== null
             && $this->published_at->lte(now());
     }

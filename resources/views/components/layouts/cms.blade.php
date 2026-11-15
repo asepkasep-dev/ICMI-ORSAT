@@ -18,6 +18,9 @@
     @php
         $user = auth()->user();
         $initials = collect(explode(' ', trim($user->name)))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('');
+        $reviewBadge = $user->isAdmin()
+            ? \App\Models\Article::where('status', \App\Enums\ArticleStatus::InReview)->count()
+            : \App\Models\Article::where('user_id', $user->id)->where('status', \App\Enums\ArticleStatus::Revision)->count();
     @endphp
 
     <div x-data="{ sidebarOpen: false }" class="min-h-screen">
@@ -45,8 +48,10 @@
 
                 <div class="space-y-1">
                     <p class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-forest-400">Konten</p>
-                    <x-cms.nav-link route="cms.articles" label="Manajemen Berita" icon="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z"/>
-                    <x-cms.nav-link route="cms.categories" label="Kategori Berita" icon="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z M6 6h.008v.008H6V6Z"/>
+                    <x-cms.nav-link route="cms.articles" label="Manajemen Berita" :badge="$reviewBadge ?: null" icon="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z"/>
+                    @if ($user->isAdmin())
+                        <x-cms.nav-link route="cms.categories" label="Kategori Berita" icon="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z M6 6h.008v.008H6V6Z"/>
+                    @endif
                     <x-cms.nav-link route="cms.media" label="Media Library" icon="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
                 </div>
 
@@ -113,6 +118,47 @@
                 </div>
             </main>
         </div>
+    </div>
+
+    <div x-data="toastHub" class="pointer-events-none fixed bottom-5 right-5 z-[100] flex w-[calc(100vw-2.5rem)] max-w-sm flex-col gap-2.5" aria-live="polite">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-3 opacity-0"
+                 x-transition:enter-end="translate-y-0 opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="translate-x-4 opacity-0"
+                 class="pointer-events-auto flex items-start gap-3 rounded-xl border p-3.5 shadow-lg shadow-forest-950/15 backdrop-blur"
+                 :class="{
+                     'border-forest-200 bg-white/95': toast.type === 'success',
+                     'border-red-200 bg-red-50/95': toast.type === 'error',
+                     'border-amber-200 bg-amber-50/95': toast.type === 'warning',
+                     'border-sky-200 bg-sky-50/95': toast.type === 'info',
+                 }">
+                <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                      :class="{
+                          'bg-forest-600 text-white': toast.type === 'success',
+                          'bg-red-600 text-white': toast.type === 'error',
+                          'bg-amber-500 text-white': toast.type === 'warning',
+                          'bg-sky-600 text-white': toast.type === 'info',
+                      }">
+                    <svg x-show="toast.type === 'success'" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
+                    <svg x-show="toast.type === 'error'" x-cloak class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                    <svg x-show="toast.type === 'warning'" x-cloak class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008ZM12 3l9.5 16.5H2.5L12 3Z"/></svg>
+                    <svg x-show="toast.type === 'info'" x-cloak class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5v-4.5m0-3.75h.008v.008H12V8.25ZM12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/></svg>
+                </span>
+                <p class="flex-1 text-sm font-medium leading-snug"
+                   :class="{
+                       'text-forest-950': toast.type === 'success',
+                       'text-red-900': toast.type === 'error',
+                       'text-amber-900': toast.type === 'warning',
+                       'text-sky-900': toast.type === 'info',
+                   }" x-text="toast.message"></p>
+                <button type="button" @click="dismiss(toast.id)" class="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-black/5 hover:text-slate-700" aria-label="Tutup notifikasi">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </template>
     </div>
     @livewireScripts
 </body>

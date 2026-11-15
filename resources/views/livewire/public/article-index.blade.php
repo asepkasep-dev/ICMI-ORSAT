@@ -72,7 +72,7 @@
         </div>
 
         <div class="mt-10">
-            {{ $articles->links() }}
+            {{ $articles->links('components.pagination') }}
         </div>
     </section>
 </div>

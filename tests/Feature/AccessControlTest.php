@@ -57,10 +57,16 @@ class AccessControlTest extends TestCase
     public function test_both_roles_can_access_content_modules(): void
     {
         foreach ([User::factory()->admin()->create(), User::factory()->create()] as $user) {
-            foreach (['/cms/berita', '/cms/kategori', '/cms/media', '/cms/profil-organisasi', '/cms/pengurus'] as $url) {
+            foreach (['/cms/berita', '/cms/media', '/cms/profil-organisasi', '/cms/pengurus'] as $url) {
                 $this->actingAs($user)->get($url)->assertOk();
             }
         }
+    }
+
+    public function test_categories_module_is_admin_only(): void
+    {
+        $this->actingAs(User::factory()->create())->get('/cms/kategori')->assertForbidden();
+        $this->actingAs(User::factory()->admin()->create())->get('/cms/kategori')->assertOk();
     }
 
     public function test_inactive_user_is_logged_out_by_middleware(): void

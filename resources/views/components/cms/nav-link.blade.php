@@ -1,4 +1,4 @@
-@props(['route', 'label', 'icon'])
+@props(['route', 'label', 'icon', 'badge' => null])
 
 @php $active = request()->routeIs($route); @endphp
 
@@ -9,7 +9,9 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon }}"/>
     </svg>
     <span class="truncate">{{ $label }}</span>
-    @if ($active)
+    @if ($badge)
+        <span class="ml-auto shrink-0 rounded-full bg-gold-400 px-2 py-0.5 text-[10px] font-bold leading-4 text-forest-950">{{ $badge }}</span>
+    @elseif ($active)
         <span class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400"></span>
     @endif
 </a>
