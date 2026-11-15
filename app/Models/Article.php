@@ -56,6 +56,13 @@ class Article extends Model
         return $this->belongsTo(Media::class, 'featured_media_id');
     }
 
+    public function metaDescription(): string
+    {
+        $text = $this->seo_description ?: $this->excerpt ?: strip_tags(str_replace('<', ' <', (string) $this->content));
+
+        return Str::limit(trim(preg_replace('/\s+/u', ' ', html_entity_decode($text, ENT_QUOTES | ENT_HTML5))), 160);
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         // Artikel terjadwal yang sudah lewat waktu tayang tetap tampil walau cron belum berjalan.

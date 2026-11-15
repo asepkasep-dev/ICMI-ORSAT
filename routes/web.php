@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SeoController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Public\ArticleIndex;
 use App\Models\Article;
@@ -17,18 +18,19 @@ Route::get('/', function () {
         ->when($featured, fn ($q) => $q->whereKeyNot($featured->id))
         ->latest('published_at')->take(3)->get();
     $categories = Category::withCount(['articles' => fn ($q) => $q->published()])->orderBy('name')->get();
-    $gallery = Media::gallery()->get()->unique('id')->values();
+    // Foto yang sama bisa muncul di beberapa berita; ambil lebih banyak lalu unikkan.
+    $galleryPhotos = Media::gallery()->take(12)->get()->unique('id')->take(4)->values();
 
     return view('public.home', [
         'profile' => OrganizationProfile::instance(),
         'featured' => $featured,
         'latest' => $latest,
         'categories' => $categories,
-        'galleryPhotos' => $gallery->take(4),
+        'galleryPhotos' => $galleryPhotos,
         'stats' => [
             'articles' => Article::published()->count(),
             'categories' => $categories->count(),
-            'photos' => $gallery->count(),
+            'photos' => Media::gallery()->reorder()->distinct()->count('media.id'),
         ],
     ]);
 })->name('home');
@@ -47,6 +49,7 @@ Route::get('/struktur-kepengurusan', function () {
 })->name('management');
 
 Route::get('/berita', ArticleIndex::class)->name('articles.index');
+Route::get('/kategori/{category:slug}', ArticleIndex::class)->name('categories.show');
 
 Route::get('/berita/{article:slug}', function (Article $article) {
     abort_unless($article->isPublished(), 404);
@@ -70,6 +73,9 @@ Route::get('/galeri', function () {
 })->name('gallery');
 
 Route::get('/kontak', fn () => view('public.contact'))->name('contact');
+
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');

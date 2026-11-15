@@ -1,5 +1,10 @@
-@props(['title' => null, 'description' => null, 'ogImage' => null, 'canonical' => null])
+@props(['title' => null, 'description' => null, 'ogImage' => null, 'canonical' => null, 'ogType' => 'website', 'robots' => null])
 
+@php
+    $metaDescription = \Illuminate\Support\Str::limit($description ?? config('icmi.description'), 300);
+    $canonicalUrl = $canonical ?? url()->current();
+    $gaId = config('icmi.seo.google_analytics_id');
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -7,21 +12,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ? $title.' — '.config('icmi.short_name') : config('icmi.name').' — '.config('icmi.tagline') }}</title>
-    <meta name="description" content="{{ $description ?? config('icmi.description') }}">
-    <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
+    <meta name="description" content="{{ $metaDescription }}">
+    @if ($robots)
+        <meta name="robots" content="{{ $robots }}">
+    @endif
+    <link rel="canonical" href="{{ $canonicalUrl }}">
     <meta property="og:site_name" content="{{ config('icmi.short_name') }}">
+    <meta property="og:locale" content="id_ID">
     <meta property="og:title" content="{{ $title ?? config('icmi.name') }}">
-    <meta property="og:description" content="{{ $description ?? config('icmi.description') }}">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:type" content="{{ $ogType }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:image" content="{{ $ogImage ?? asset('images/icmi-logo.png') }}">
     <meta name="twitter:card" content="{{ $ogImage ? 'summary_large_image' : 'summary' }}">
+    @if ($verification = config('icmi.seo.google_site_verification'))
+        <meta name="google-site-verification" content="{{ $verification }}">
+    @endif
+    {{ $head ?? '' }}
     <link rel="icon" href="{{ config('icmi.logo_url') ?? asset('images/icmi-emblem.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    @if ($gaId)
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ urlencode($gaId) }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', @json($gaId));
+        </script>
+    @endif
 </head>
 <body class="min-h-screen">
     @php

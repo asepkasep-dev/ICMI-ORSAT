@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Media;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Cache;
 
 class SiteSettings
 {
@@ -12,9 +13,12 @@ class SiteSettings
         'name', 'short_name', 'long_name', 'tagline', 'term', 'description',
         'contact.address', 'contact.email', 'contact.phone',
         'social.instagram', 'social.facebook', 'social.youtube', 'social.tiktok',
+        'seo.google_site_verification', 'seo.google_analytics_id',
     ];
 
     public const LOGO = 'logo_media_id';
+
+    public const CACHE_KEY = 'site-settings';
 
     public static function apply(): void
     {
@@ -48,6 +52,6 @@ class SiteSettings
 
     private static function stored(): array
     {
-        return Setting::whereIn('key', [...self::FIELDS, self::LOGO])->pluck('value', 'key')->all();
+        return Cache::rememberForever(self::CACHE_KEY, fn () => Setting::whereIn('key', [...self::FIELDS, self::LOGO])->pluck('value', 'key')->all());
     }
 }

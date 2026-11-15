@@ -6,13 +6,22 @@
             <div class="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-forest-500/25 blur-3xl animate-drift"></div>
         </div>
         <div class="relative mx-auto max-w-7xl px-4 pb-14 pt-14 sm:px-6 lg:px-8">
-            <x-ui.breadcrumb :items="[['label' => 'Berita']]" class="[&_a]:text-forest-200 [&_span]:text-gold-300 [&_svg]:text-forest-400"/>
+            <x-ui.breadcrumb :items="$activeCategory ? [['label' => 'Berita', 'url' => route('articles.index')], ['label' => $activeCategory->name]] : [['label' => 'Berita']]"
+                             class="[&_a]:text-forest-200 [&_span]:text-gold-300 [&_svg]:text-forest-400"/>
             <div class="mt-6 flex flex-wrap items-end justify-between gap-8">
                 <div class="max-w-xl">
-                    <h1 class="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Berita &amp; Artikel</h1>
-                    <p class="mt-4 text-sm leading-relaxed text-forest-100/80 sm:text-base">
-                        Publikasi resmi kegiatan, program, dan gagasan {{ config('icmi.name') }}.
-                    </p>
+                    @if ($activeCategory)
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-gold-300">Kategori</p>
+                        <h1 class="mt-2 font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">{{ $activeCategory->name }}</h1>
+                        <p class="mt-4 text-sm leading-relaxed text-forest-100/80 sm:text-base">
+                            {{ $activeCategory->description ?: 'Kumpulan berita kategori '.$activeCategory->name.' dari '.config('icmi.name').'.' }}
+                        </p>
+                    @else
+                        <h1 class="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Berita &amp; Artikel</h1>
+                        <p class="mt-4 text-sm leading-relaxed text-forest-100/80 sm:text-base">
+                            Publikasi resmi kegiatan, program, dan gagasan {{ config('icmi.name') }}.
+                        </p>
+                    @endif
                 </div>
                 <div class="relative w-full max-w-md">
                     <svg class="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-forest-200/60" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
@@ -29,19 +38,20 @@
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter kategori">
-                <button type="button" wire:click="setCategory('')"
-                        class="rounded-full px-4 py-2 text-xs font-semibold transition {{ $category === '' ? 'bg-forest-900 text-gold-300 shadow-sm' : 'border border-forest-200 bg-white text-slate-600 hover:border-forest-400 hover:text-forest-800' }}">
+            <nav class="flex flex-wrap items-center gap-2" aria-label="Kategori berita">
+                <a href="{{ route('articles.index') }}" @if (! $activeCategory) aria-current="page" @endif
+                   class="rounded-full px-4 py-2 text-xs font-semibold transition {{ ! $activeCategory ? 'bg-forest-900 text-gold-300 shadow-sm' : 'border border-forest-200 bg-white text-slate-600 hover:border-forest-400 hover:text-forest-800' }}">
                     Semua
-                </button>
+                </a>
                 @foreach ($categories as $cat)
-                    <button type="button" wire:click="setCategory('{{ $cat->slug }}')"
-                            class="rounded-full px-4 py-2 text-xs font-semibold transition {{ $category === $cat->slug ? 'bg-forest-900 text-gold-300 shadow-sm' : 'border border-forest-200 bg-white text-slate-600 hover:border-forest-400 hover:text-forest-800' }}">
+                    @php $isActive = $activeCategory?->is($cat); @endphp
+                    <a href="{{ route('categories.show', $cat) }}" wire:key="cat-{{ $cat->id }}" @if ($isActive) aria-current="page" @endif
+                       class="rounded-full px-4 py-2 text-xs font-semibold transition {{ $isActive ? 'bg-forest-900 text-gold-300 shadow-sm' : 'border border-forest-200 bg-white text-slate-600 hover:border-forest-400 hover:text-forest-800' }}">
                         {{ $cat->name }}
-                        <span class="ml-1 {{ $category === $cat->slug ? 'text-gold-400/80' : 'text-slate-400' }}">{{ $cat->articles_count }}</span>
-                    </button>
+                        <span class="ml-1 {{ $isActive ? 'text-gold-400/80' : 'text-slate-400' }}">{{ $cat->articles_count }}</span>
+                    </a>
                 @endforeach
-            </div>
+            </nav>
             <div class="w-44">
                 <x-ui.select name="sort" wire:model.live="sort" aria-label="Urutkan berita">
                     <option value="newest">Terbaru</option>
@@ -57,15 +67,15 @@
             </div>
         @endif
 
-        <div wire:loading.class="opacity-50 pointer-events-none" wire:target="q,category,sort,gotoPage,previousPage,nextPage"
+        <div wire:loading.class="opacity-50 pointer-events-none" wire:target="q,sort,gotoPage,previousPage,nextPage"
              class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-200">
             @forelse ($articles as $article)
                 <x-ui.article-card :article="$article"/>
             @empty
                 <div class="sm:col-span-2 lg:col-span-3">
-                    <x-ui.empty-state title="Tidak ada berita yang cocok"
+                    <x-ui.empty-state :title="$activeCategory && $q === '' ? 'Belum ada berita di kategori ini' : 'Tidak ada berita yang cocok'"
                                       description="Coba kata kunci lain atau hapus filter untuk melihat seluruh berita.">
-                        <x-ui.button type="button" wire:click="resetFilters" variant="outline">Hapus filter</x-ui.button>
+                        <x-ui.button type="button" wire:click="resetFilters" variant="outline">{{ $activeCategory ? 'Lihat semua berita' : 'Hapus filter' }}</x-ui.button>
                     </x-ui.empty-state>
                 </div>
             @endforelse

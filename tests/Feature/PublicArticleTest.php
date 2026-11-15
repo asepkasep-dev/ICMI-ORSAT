@@ -106,21 +106,49 @@ class PublicArticleTest extends TestCase
             ->assertDontSee('Rapat Pleno Pengurus');
     }
 
-    public function test_category_filter_limits_results(): void
+    public function test_category_page_limits_results(): void
     {
         $category = Category::factory()->create(['name' => 'Dakwah', 'slug' => 'dakwah']);
         $inCategory = Article::factory()->published()->create([
             'user_id' => $this->author->id, 'title' => 'Berita Dakwah Utama', 'slug' => 'berita-dakwah',
         ]);
         $inCategory->categories()->attach($category);
+        $draft = Article::factory()->create([
+            'user_id' => $this->author->id, 'title' => 'Draf Dakwah Rahasia', 'slug' => 'draf-dakwah',
+        ]);
+        $draft->categories()->attach($category);
         Article::factory()->published()->create([
             'user_id' => $this->author->id, 'title' => 'Berita Umum Lain', 'slug' => 'berita-umum',
         ]);
 
-        Livewire::test(ArticleIndex::class)
-            ->call('setCategory', 'dakwah')
+        $this->get('/kategori/dakwah')
+            ->assertOk()
+            ->assertSee('<h1', false)
+            ->assertSee('Dakwah')
+            ->assertSee('Berita Dakwah Utama')
+            ->assertDontSee('Draf Dakwah Rahasia')
+            ->assertDontSee('Berita Umum Lain')
+            ->assertSee('<link rel="canonical" href="'.route('categories.show', $category).'">', false);
+
+        Livewire::test(ArticleIndex::class, ['category' => $category])
+            ->set('q', 'Utama')
             ->assertSee('Berita Dakwah Utama')
             ->assertDontSee('Berita Umum Lain');
+    }
+
+    public function test_unknown_category_returns_404(): void
+    {
+        $this->get('/kategori/tidak-ada')->assertNotFound();
+    }
+
+    public function test_category_links_point_to_category_pages(): void
+    {
+        $category = Category::factory()->create(['name' => 'Pendidikan', 'slug' => 'pendidikan']);
+        $article = Article::factory()->published()->create(['user_id' => $this->author->id, 'slug' => 'berita-pendidikan']);
+        $article->categories()->attach($category);
+
+        $this->get('/berita')->assertSee('href="'.route('categories.show', $category).'"', false);
+        $this->get('/berita/berita-pendidikan')->assertSee('href="'.route('categories.show', $category).'"', false);
     }
 
     public function test_sort_orders_articles(): void
@@ -169,11 +197,25 @@ class PublicArticleTest extends TestCase
     {
         Livewire::test(ArticleIndex::class)
             ->set('q', 'ramadan')
-            ->set('category', 'dakwah')
             ->set('sort', 'title')
             ->call('resetFilters')
             ->assertSet('q', '')
-            ->assertSet('category', '')
             ->assertSet('sort', 'newest');
+    }
+
+    public function test_reset_filters_on_category_page_returns_to_all_articles(): void
+    {
+        $category = Category::factory()->create();
+
+        Livewire::test(ArticleIndex::class, ['category' => $category])
+            ->call('resetFilters')
+            ->assertRedirect(route('articles.index'));
+    }
+
+    public function test_category_cannot_be_changed_from_client(): void
+    {
+        $this->expectException(\Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException::class);
+
+        Livewire::test(ArticleIndex::class)->set('categoryId', 1);
     }
 }

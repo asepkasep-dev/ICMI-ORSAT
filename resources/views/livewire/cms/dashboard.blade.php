@@ -5,7 +5,7 @@
         ['no' => 2, 'name' => 'UI/UX Implementation', 'desc' => 'Design system dan desain seluruh halaman utama.', 'done' => true],
         ['no' => 3, 'name' => 'Content Management System', 'desc' => 'CRUD berita, editor, kategori, media, workflow publikasi.', 'done' => true],
         ['no' => 4, 'name' => 'Organization Profile', 'desc' => 'Sejarah, visi misi, sambutan, pengurus, pengaturan.', 'done' => true],
-        ['no' => 5, 'name' => 'Public Website & SEO', 'desc' => 'Integrasi konten publik, pencarian, galeri, SEO.', 'done' => false],
+        ['no' => 5, 'name' => 'Public Website & SEO', 'desc' => 'Integrasi konten publik, pencarian, galeri, SEO.', 'done' => true],
         ['no' => 6, 'name' => 'Testing & Deployment', 'desc' => 'Pengujian menyeluruh, backup, deployment, pelatihan.', 'done' => false],
     ];
     $activityMeta = static fn (string $action): array => match (true) {
@@ -232,7 +232,7 @@
             <div class="rounded-3xl border border-forest-100 bg-white p-7 shadow-sm">
                 <div class="flex items-center justify-between gap-4">
                     <h3 class="font-display text-lg font-bold text-forest-950">Progres Pengembangan</h3>
-                    <x-ui.badge color="gold">Milestone 4 selesai</x-ui.badge>
+                    <x-ui.badge color="gold">Milestone 5 selesai</x-ui.badge>
                 </div>
                 <ol class="mt-6 space-y-0">
                     @foreach ($milestones as $m)

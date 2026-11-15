@@ -27,6 +27,8 @@ class Edit extends Component
         'facebook' => 'social.facebook',
         'youtube' => 'social.youtube',
         'tiktok' => 'social.tiktok',
+        'google_site_verification' => 'seo.google_site_verification',
+        'google_analytics_id' => 'seo.google_analytics_id',
     ];
 
     public string $name = '';
@@ -42,6 +44,8 @@ class Edit extends Component
     public string $facebook = '';
     public string $youtube = '';
     public string $tiktok = '';
+    public string $google_site_verification = '';
+    public string $google_analytics_id = '';
 
     public $newLogo = null;
     public bool $resetLogo = false;
@@ -85,7 +89,17 @@ class Edit extends Component
             'facebook' => $social,
             'youtube' => $social,
             'tiktok' => $social,
+            'google_site_verification' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'google_analytics_id' => ['nullable', 'string', 'max:20', 'regex:/^G-[A-Z0-9]{4,}$/'],
             'newLogo' => ['nullable', ...MediaStorage::rules()],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'google_site_verification.regex' => 'Masukkan hanya nilai content dari meta tag verifikasi, tanpa tag HTML.',
+            'google_analytics_id.regex' => 'Format ID Google Analytics 4 harus seperti G-XXXXXXXXXX.',
         ];
     }
 
@@ -101,6 +115,8 @@ class Edit extends Component
             'address' => 'alamat sekretariat',
             'email' => 'email organisasi',
             'phone' => 'nomor kontak',
+            'google_site_verification' => 'kode verifikasi Google Search Console',
+            'google_analytics_id' => 'ID Google Analytics',
             'newLogo' => 'logo',
         ];
     }

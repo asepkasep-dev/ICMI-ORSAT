@@ -9,7 +9,7 @@
 @endphp
 
 @if ($src)
-    <img src="{{ $src }}" alt="{{ $name }}" {{ $attributes->merge(['class' => 'rounded-full object-cover']) }}>
+    <img src="{{ $src }}" alt="{{ $name }}" loading="lazy" decoding="async" {{ $attributes->merge(['class' => 'rounded-full object-cover']) }}>
 @else
     <span {{ $attributes->merge(['class' => 'flex shrink-0 items-center justify-center rounded-full bg-forest-900 font-display font-bold text-gold-400']) }} aria-hidden="true">
         {{ $initials ?: 'IC' }}

@@ -76,6 +76,18 @@
             </div>
         </div>
 
+        <div class="space-y-4 rounded-2xl border border-forest-100 bg-white p-6 shadow-sm">
+            <div>
+                <h2 class="font-display text-base font-bold text-forest-950">SEO &amp; Analitik</h2>
+                <p class="mt-1 text-sm text-slate-500">Opsional. Sitemap tersedia otomatis di <a href="{{ route('sitemap') }}" target="_blank" class="font-medium text-forest-700 underline">{{ route('sitemap') }}</a> untuk didaftarkan ke Google Search Console.</p>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-ui.input name="google_site_verification" label="Kode verifikasi Google Search Console" wire:model="google_site_verification" placeholder="Nilai content dari meta tag verifikasi"/>
+                <x-ui.input name="google_analytics_id" label="ID Pengukuran Google Analytics 4" wire:model="google_analytics_id" placeholder="G-XXXXXXXXXX"/>
+            </div>
+            <p class="text-xs text-slate-400">Kosongkan bila tidak digunakan. Skrip Google Analytics hanya dimuat pada website publik ketika ID diisi.</p>
+        </div>
+
         <div class="flex justify-end">
             <x-ui.button type="submit" variant="primary" wire:loading.attr="disabled">
                 <span wire:loading.remove wire:target="save">Simpan Pengaturan</span>

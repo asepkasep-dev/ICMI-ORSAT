@@ -38,4 +38,10 @@ return [
         'youtube' => null,
         'tiktok' => null,
     ],
+
+    // Diisi Admin melalui Pengaturan Website bila diperlukan (PRD §8).
+    'seo' => [
+        'google_site_verification' => null,
+        'google_analytics_id' => null,
+    ],
 ];

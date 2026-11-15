@@ -1,5 +1,23 @@
 <x-layouts.public>
     @php
+        $organizationLd = array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            'name' => config('icmi.name'),
+            'alternateName' => config('icmi.long_name'),
+            'url' => route('home'),
+            'logo' => config('icmi.logo_url') ?? asset('images/icmi-logo.png'),
+            'description' => config('icmi.description'),
+            'email' => config('icmi.contact.email'),
+            'telephone' => config('icmi.contact.phone'),
+            'address' => config('icmi.contact.address'),
+            'sameAs' => array_values(array_filter(config('icmi.social', []))) ?: null,
+        ]);
+    @endphp
+    <x-slot:head>
+        <script type="application/ld+json">@json($organizationLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG)</script>
+    </x-slot:head>
+    @php
         $lightboxPhotos = $galleryPhotos->map(fn ($m) => [
             'url' => $m->url(),
             'caption' => $m->caption ?? $m->alt,
@@ -209,7 +227,7 @@
             <div class="mt-10 flex flex-wrap items-center gap-2" data-reveal>
                 <span class="mr-2 text-xs font-bold uppercase tracking-wider text-slate-400">Kategori</span>
                 @foreach ($categories as $cat)
-                    <a href="{{ route('articles.index', ['category' => $cat->slug]) }}"
+                    <a href="{{ route('categories.show', $cat) }}"
                        class="rounded-full border border-forest-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-gold-400 hover:bg-gold-50 hover:text-forest-900">
                         {{ $cat->name }} <span class="ml-1 text-slate-400">{{ $cat->articles_count }}</span>
                     </a>

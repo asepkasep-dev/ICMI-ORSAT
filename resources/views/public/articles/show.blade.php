@@ -17,18 +17,44 @@
             'article_url' => $shareUrl,
         ]);
     }
+    $jsonLd = array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => 'NewsArticle',
+        'headline' => \Illuminate\Support\Str::limit($article->title, 110),
+        'description' => $article->metaDescription(),
+        'image' => $article->featuredMedia ? [$article->featuredMedia->url()] : null,
+        'datePublished' => $article->published_at->toAtomString(),
+        'dateModified' => $article->updated_at->max($article->published_at)->toAtomString(),
+        'author' => $article->author ? ['@type' => 'Person', 'name' => $article->author->name] : null,
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => config('icmi.name'),
+            'logo' => ['@type' => 'ImageObject', 'url' => config('icmi.logo_url') ?? asset('images/icmi-logo.png')],
+        ],
+        'mainEntityOfPage' => $shareUrl,
+        'articleSection' => $article->categories->pluck('name')->all() ?: null,
+    ]);
 @endphp
 
-<x-layouts.public :title="$article->seo_title ?? $article->title"
-                  :description="$article->seo_description ?? $article->excerpt"
+<x-layouts.public :title="$article->seo_title ?: $article->title"
+                  :description="$article->metaDescription()"
                   :ogImage="$article->featuredMedia?->url()"
-                  :canonical="$shareUrl">
+                  :canonical="$shareUrl"
+                  ogType="article">
+    <x-slot:head>
+        <meta property="article:published_time" content="{{ $article->published_at->toAtomString() }}">
+        <meta property="article:modified_time" content="{{ $article->updated_at->max($article->published_at)->toAtomString() }}">
+        @foreach ($article->categories as $category)
+            <meta property="article:section" content="{{ $category->name }}">
+        @endforeach
+        <script type="application/ld+json">@json($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG)</script>
+    </x-slot:head>
     <article>
         <header class="mx-auto max-w-4xl px-4 pt-12 sm:px-6">
             <x-ui.breadcrumb :items="[['label' => 'Berita', 'url' => route('articles.index')], ['label' => \Illuminate\Support\Str::limit($article->title, 40)]]"/>
             <div class="mt-6 flex flex-wrap items-center gap-2">
                 @foreach ($article->categories as $category)
-                    <a href="{{ route('articles.index', ['category' => $category->slug]) }}">
+                    <a href="{{ route('categories.show', $category) }}">
                         <x-ui.badge color="gold">{{ $category->name }}</x-ui.badge>
                     </a>
                 @endforeach
@@ -62,7 +88,7 @@
             <figure class="mx-auto mt-10 max-w-5xl px-4 sm:px-6" data-reveal>
                 <button type="button" x-data x-on:click="$dispatch('lightbox-open', { index: 0 })"
                         class="group block w-full overflow-hidden rounded-3xl border border-forest-100 shadow-lg shadow-forest-900/10">
-                    <img src="{{ $article->featuredMedia->url() }}" alt="{{ $article->featuredMedia->alt ?? $article->title }}"
+                    <img src="{{ $article->featuredMedia->url() }}" alt="{{ $article->featuredMedia->alt ?? $article->title }}" fetchpriority="high"
                          class="aspect-[21/10] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]">
                 </button>
                 @if ($article->featuredMedia->caption)
