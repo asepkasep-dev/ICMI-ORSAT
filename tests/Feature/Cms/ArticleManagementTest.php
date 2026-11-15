@@ -1,0 +1,238 @@
+<?php
+
+namespace Tests\Feature\Cms;
+
+use App\Enums\ArticleStatus;
+use App\Livewire\Cms\Articles\Form;
+use App\Livewire\Cms\Articles\Index;
+use App\Livewire\Cms\Dashboard;
+use App\Models\Article;
+use App\Models\Category;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+class ArticleManagementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private string $longContent = 'Isi berita yang cukup panjang untuk memenuhi aturan validasi minimal dua puluh karakter.';
+
+    public function test_create_form_is_accessible_to_authenticated_users(): void
+    {
+        foreach ([User::factory()->admin()->create(), User::factory()->create()] as $user) {
+            $this->actingAs($user)->get('/cms/berita/buat')->assertOk()->assertSee('Tulis Berita');
+        }
+    }
+
+    public function test_writer_sees_only_own_articles_in_index(): void
+    {
+        $writer = User::factory()->create();
+        $other = User::factory()->create();
+        Article::factory()->create(['user_id' => $writer->id, 'title' => 'Berita Milik Saya', 'slug' => 'berita-milik-saya']);
+        Article::factory()->create(['user_id' => $other->id, 'title' => 'Berita Penulis Lain', 'slug' => 'berita-penulis-lain']);
+
+        $this->actingAs($writer);
+        Livewire::test(Index::class)
+            ->assertSee('Berita Milik Saya')
+            ->assertDontSee('Berita Penulis Lain');
+    }
+
+    public function test_admin_sees_all_articles_in_index(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Article::factory()->create(['title' => 'Berita Satu', 'slug' => 'berita-satu']);
+        Article::factory()->create(['title' => 'Berita Dua', 'slug' => 'berita-dua']);
+
+        $this->actingAs($admin);
+        Livewire::test(Index::class)->assertSee('Berita Satu')->assertSee('Berita Dua');
+    }
+
+    public function test_writer_can_create_draft_article(): void
+    {
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class)
+            ->set('title', 'Berita Baru Karya Writer')
+            ->set('content', $this->longContent)
+            ->set('categories', [(string) $category->id])
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('cms.articles'));
+
+        $this->assertDatabaseHas('articles', [
+            'title' => 'Berita Baru Karya Writer',
+            'user_id' => $writer->id,
+            'status' => ArticleStatus::Draft->value,
+        ]);
+    }
+
+    public function test_create_validation_requires_title_content_categories(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(Form::class)
+            ->set('title', 'Abc')
+            ->set('content', 'pendek')
+            ->call('save')
+            ->assertHasErrors(['title', 'content', 'categories']);
+    }
+
+    public function test_writer_can_edit_own_article(): void
+    {
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $article = Article::factory()->create(['user_id' => $writer->id, 'title' => 'Judul Asli', 'slug' => 'judul-asli']);
+        $article->categories()->attach($category);
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class, ['article' => $article])
+            ->set('title', 'Judul Diperbarui')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('cms.articles'));
+
+        $this->assertDatabaseHas('articles', ['id' => $article->id, 'title' => 'Judul Diperbarui']);
+    }
+
+    public function test_writer_cannot_edit_foreign_article(): void
+    {
+        $writer = User::factory()->create();
+        $other = User::factory()->create();
+        $article = Article::factory()->create(['user_id' => $other->id, 'slug' => 'berita-orang-lain']);
+
+        $this->actingAs($writer);
+        $this->assertFalse($writer->can('update', $article));
+        $this->get(route('cms.articles.edit', $article))->assertForbidden();
+    }
+
+    public function test_admin_can_edit_foreign_article(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $other = User::factory()->create();
+        $article = Article::factory()->create(['user_id' => $other->id, 'slug' => 'berita-admin-edit']);
+
+        $this->actingAs($admin);
+        $this->assertTrue($admin->can('update', $article));
+        $this->get(route('cms.articles.edit', $article))->assertOk();
+    }
+
+    public function test_writer_cannot_delete_article(): void
+    {
+        $writer = User::factory()->create();
+        $article = Article::factory()->create(['user_id' => $writer->id]);
+        $this->actingAs($writer);
+
+        $this->assertFalse($writer->can('delete', $article));
+        Livewire::test(Index::class)->call('confirmDelete', $article->id)->assertStatus(403);
+        $this->assertDatabaseHas('articles', ['id' => $article->id, 'deleted_at' => null]);
+    }
+
+    public function test_admin_can_delete_article(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $article = Article::factory()->create(['title' => 'Berita Dihapus Admin']);
+        $this->actingAs($admin);
+
+        $this->assertTrue($admin->can('delete', $article));
+        Livewire::test(Index::class)
+            ->call('confirmDelete', $article->id)
+            ->assertSet('confirmId', $article->id)
+            ->call('deleteConfirmed')
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('articles', ['id' => $article->id]);
+    }
+
+    public function test_featured_flag_is_forced_false_for_writer(): void
+    {
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class)
+            ->set('title', 'Berita Writer Biasa')
+            ->set('content', $this->longContent)
+            ->set('categories', [(string) $category->id])
+            ->set('is_featured', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('articles', ['title' => 'Berita Writer Biasa', 'is_featured' => false]);
+    }
+
+    public function test_upload_rejects_non_image_file(): void
+    {
+        Storage::fake('public');
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class)
+            ->set('title', 'Berita Dengan Upload')
+            ->set('content', $this->longContent)
+            ->set('categories', [(string) $category->id])
+            ->set('newFeatured', UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'))
+            ->call('save')
+            ->assertHasErrors(['newFeatured']);
+    }
+
+    public function test_valid_image_upload_is_stored_and_linked(): void
+    {
+        Storage::fake('public');
+        $writer = User::factory()->create();
+        $category = Category::factory()->create();
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class)
+            ->set('title', 'Berita Dengan Gambar')
+            ->set('content', $this->longContent)
+            ->set('categories', [(string) $category->id])
+            ->set('newFeatured', UploadedFile::fake()->image('cover.jpg', 800, 600))
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('cms.articles'));
+
+        $article = Article::where('title', 'Berita Dengan Gambar')->firstOrFail();
+        $this->assertNotNull($article->featured_media_id);
+        $this->assertDatabaseHas('media', ['id' => $article->featured_media_id]);
+        Storage::disk('public')->assertExists($article->featuredMedia->file_path);
+    }
+
+    public function test_admin_dashboard_statistics_come_from_database(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Article::factory()->published()->count(3)->create();
+        Article::factory()->count(2)->create();
+        Article::factory()->scheduled()->create();
+        $this->actingAs($admin);
+
+        $stats = Livewire::test(Dashboard::class)->viewData('articleStats');
+
+        $this->assertSame(6, $stats['total']);
+        $this->assertSame(3, $stats['published']);
+        $this->assertSame(2, $stats['draft']);
+        $this->assertSame(1, $stats['scheduled']);
+    }
+
+    public function test_writer_dashboard_counts_only_own_articles(): void
+    {
+        $writer = User::factory()->create();
+        $other = User::factory()->create();
+        Article::factory()->published()->count(2)->create(['user_id' => $writer->id]);
+        Article::factory()->create(['user_id' => $writer->id]);
+        Article::factory()->published()->count(5)->create(['user_id' => $other->id]);
+        $this->actingAs($writer);
+
+        $stats = Livewire::test(Dashboard::class)->viewData('articleStats');
+
+        $this->assertSame(3, $stats['total']);
+        $this->assertSame(2, $stats['published']);
+        $this->assertSame(1, $stats['draft']);
+    }
+}

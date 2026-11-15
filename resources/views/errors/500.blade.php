@@ -1,0 +1,2 @@
+<x-error-page code="500" title="Terjadi Kesalahan Server"
+              description="Terjadi kesalahan pada server saat memproses permintaan Anda. Tim pengelola telah mencatat kejadian ini. Silakan coba beberapa saat lagi."/>

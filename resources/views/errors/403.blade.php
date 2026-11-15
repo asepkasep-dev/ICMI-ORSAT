@@ -1,0 +1,2 @@
+<x-error-page code="403" title="Akses Ditolak"
+              description="Anda tidak memiliki kewenangan untuk membuka halaman ini. Halaman tertentu hanya tersedia bagi Admin. Hubungi pengelola organisasi bila Anda merasa ini keliru."/>

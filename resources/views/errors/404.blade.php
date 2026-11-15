@@ -1,0 +1,2 @@
+<x-error-page code="404" title="Halaman Tidak Ditemukan"
+              description="Halaman yang Anda cari tidak tersedia atau telah dipindahkan. Periksa kembali alamat URL, atau kembali ke beranda untuk menjelajahi website."/>

@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\ArticleStatus;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+
+class Article extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'user_id', 'title', 'slug', 'excerpt', 'content', 'status',
+        'published_at', 'is_featured', 'seo_title', 'seo_description', 'featured_media_id',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => ArticleStatus::class,
+            'published_at' => 'datetime',
+            'is_featured' => 'boolean',
+        ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
+    public function photos(): BelongsToMany
+    {
+        return $this->belongsToMany(Media::class)
+            ->withPivot(['show_in_gallery', 'sort_order'])
+            ->orderByPivot('sort_order');
+    }
+
+    public function featuredMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'featured_media_id');
+    }
+
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('status', ArticleStatus::Published)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
+    public function scopeFeatured(Builder $query): Builder
+    {
+        return $query->where('is_featured', true);
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->status === ArticleStatus::Published
+            && $this->published_at !== null
+            && $this->published_at->lte(now());
+    }
+
+    public function readingTime(): int
+    {
+        return max(1, (int) ceil(str_word_count(strip_tags($this->content)) / 200));
+    }
+
+    public static function uniqueSlug(string $title, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($title) ?: 'berita';
+        $slug = $base;
+        $i = 2;
+
+        while (static::withTrashed()
+            ->where('slug', $slug)
+            ->when($ignoreId, fn (Builder $q) => $q->whereKeyNot($ignoreId))
+            ->exists()) {
+            $slug = $base.'-'.$i++;
+        }
+
+        return $slug;
+    }
+}
