@@ -91,17 +91,22 @@
 
                 @php
                     $status = $article?->status ?? \App\Enums\ArticleStatus::Draft;
-                    $canPublish = $status !== \App\Enums\ArticleStatus::Archived;
                     $isAdmin = auth()->user()->isAdmin();
+                    $subject = $article ?? new \App\Models\Article(['user_id' => auth()->id(), 'status' => $status]);
+                    $canPublish = auth()->user()->can('publish', $subject);
+                    $canSchedule = auth()->user()->can('schedule', $subject);
+                    $canReview = $articleId && auth()->user()->can('review', $subject);
                 @endphp
 
-                @if ($canPublish)
+                @if ($status !== \App\Enums\ArticleStatus::Archived)
                     <div class="grid gap-2">
+                        @if ($canPublish)
                         <x-ui.button type="button" variant="primary" wire:click="publish" wire:loading.attr="disabled" wire:target="publish">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
                             <span wire:loading.remove wire:target="publish">{{ $status === \App\Enums\ArticleStatus::Published ? 'Perbarui Publikasi' : 'Terbitkan Sekarang' }}</span>
                             <span wire:loading wire:target="publish">Menerbitkan…</span>
                         </x-ui.button>
+                        @endif
 
                         @if (in_array($status, [\App\Enums\ArticleStatus::Draft, \App\Enums\ArticleStatus::Revision], true))
                             <x-ui.button type="button" variant="outline" wire:click="submitReview" wire:loading.attr="disabled" wire:target="submitReview">
@@ -111,7 +116,7 @@
                             </x-ui.button>
                         @endif
 
-                        @if ($isAdmin)
+                        @if ($canSchedule)
                             <x-ui.button type="button" variant="outline" x-on:click="showSchedule = !showSchedule; showRevision = false">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
                                 Jadwalkan
@@ -126,8 +131,9 @@
                                     <span wire:loading wire:target="schedule">Menjadwalkan…</span>
                                 </x-ui.button>
                             </div>
+                        @endif
 
-                            @if ($articleId)
+                        @if ($canReview)
                                 <x-ui.button type="button" variant="outline" x-on:click="showRevision = !showRevision; showSchedule = false">
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
                                     Minta Revisi
@@ -143,7 +149,6 @@
                                         <span wire:loading wire:target="requestRevision">Mengembalikan…</span>
                                     </x-ui.button>
                                 </div>
-                            @endif
                         @endif
                     </div>
                 @else

@@ -163,6 +163,123 @@ class ArticleWorkflowTest extends TestCase
         Livewire::test(Index::class)->call('openRevision', $article->id)->assertStatus(403);
     }
 
+    public function test_schedule_input_is_interpreted_as_jakarta_time(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $article = $this->articleFor($admin);
+        $this->actingAs($admin);
+
+        $local = now('Asia/Jakarta')->addDay()->setTime(10, 0);
+
+        Livewire::test(Index::class)
+            ->call('openSchedule', $article->id)
+            ->set('scheduleAt', $local->format('Y-m-d\TH:i'))
+            ->call('scheduleConfirmed')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Asia/Jakarta', config('app.timezone'));
+        $this->assertSame('03:00', $article->refresh()->published_at->utc()->format('H:i'));
+    }
+
+    public function test_writer_cannot_unpublish_by_submitting_published_article_for_review(): void
+    {
+        $writer = User::factory()->create();
+        $article = $this->articleFor($writer, ArticleStatus::Published);
+        $this->actingAs($writer);
+
+        Livewire::test(Index::class)->call('submitReview', $article->id)->assertStatus(403);
+        Livewire::test(Form::class, ['article' => $article])->call('submitReview')->assertStatus(403);
+
+        $this->assertSame(ArticleStatus::Published, $article->refresh()->status);
+    }
+
+    public function test_writer_cannot_publish_before_admin_schedule(): void
+    {
+        $writer = User::factory()->create();
+        $article = $this->articleFor($writer, ArticleStatus::Scheduled);
+        $article->update(['published_at' => $at = now()->addWeek()->startOfMinute()]);
+        $this->actingAs($writer);
+
+        Livewire::test(Index::class)->call('publish', $article->id)->assertStatus(403);
+        Livewire::test(Form::class, ['article' => $article])->call('publish')->assertStatus(403);
+
+        $article->refresh();
+        $this->assertSame(ArticleStatus::Scheduled, $article->status);
+        $this->assertTrue($article->published_at->eq($at));
+    }
+
+    public function test_admin_can_publish_scheduled_article_early(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $article = $this->articleFor(User::factory()->create(), ArticleStatus::Scheduled);
+        $article->update(['published_at' => now()->addWeek()]);
+        $this->actingAs($admin);
+
+        Livewire::test(Index::class)->call('publish', $article->id)->assertDispatched('toast');
+
+        $article->refresh();
+        $this->assertSame(ArticleStatus::Published, $article->status);
+        $this->assertTrue($article->published_at->lte(now()));
+    }
+
+    public function test_admin_cannot_make_invalid_status_transitions(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+
+        $published = $this->articleFor($admin, ArticleStatus::Published);
+        Livewire::test(Index::class)->call('restore', $published->id)->assertStatus(403);
+        Livewire::test(Index::class)->call('openSchedule', $published->id)->assertStatus(403);
+        Livewire::test(Index::class)->call('openRevision', $published->id)->assertStatus(403);
+        $this->assertSame(ArticleStatus::Published, $published->refresh()->status);
+
+        $draft = $this->articleFor($admin);
+        Livewire::test(Index::class)->call('archive', $draft->id)->assertStatus(403);
+        $this->assertSame(ArticleStatus::Draft, $draft->refresh()->status);
+    }
+
+    public function test_writer_menu_hides_publish_for_scheduled_article(): void
+    {
+        $writer = User::factory()->create();
+        $article = $this->articleFor($writer, ArticleStatus::Scheduled);
+        $article->update(['published_at' => now()->addWeek()]);
+        $this->actingAs($writer);
+
+        Livewire::test(Index::class)->assertDontSeeHtml('wire:click="publish('.$article->id.')"');
+        Livewire::test(Form::class, ['article' => $article])->assertDontSeeHtml('wire:click="publish"');
+    }
+
+    public function test_unauthorized_form_action_does_not_save_changes(): void
+    {
+        $writer = User::factory()->create();
+        $article = $this->articleFor($writer);
+        $this->actingAs($writer);
+
+        Livewire::test(Form::class, ['article' => $article])
+            ->set('title', 'Judul yang tidak boleh tersimpan')
+            ->call('schedule')
+            ->assertStatus(403);
+
+        $this->assertNotSame('Judul yang tidak boleh tersimpan', $article->refresh()->title);
+        $this->assertDatabaseMissing('activity_logs', ['action' => 'article.updated', 'subject_id' => $article->id]);
+    }
+
+    public function test_invalid_schedule_time_does_not_save_changes(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $article = $this->articleFor($admin);
+        $this->actingAs($admin);
+
+        Livewire::test(Form::class, ['article' => $article])
+            ->set('title', 'Judul yang tidak boleh tersimpan')
+            ->set('scheduledAt', now()->subHour()->format('Y-m-d\TH:i'))
+            ->call('schedule')
+            ->assertHasErrors(['scheduledAt']);
+
+        $this->assertNotSame('Judul yang tidak boleh tersimpan', $article->refresh()->title);
+        $this->assertSame(ArticleStatus::Draft, $article->status);
+    }
+
     public function test_admin_can_archive_and_restore_article(): void
     {
         $admin = User::factory()->admin()->create();

@@ -9,6 +9,21 @@ use Carbon\CarbonInterface;
 
 class ArticleWorkflow
 {
+    private const ALLOWED_FROM = [
+        'submitReview' => [ArticleStatus::Draft, ArticleStatus::Revision],
+        // Published -> publish menyimpan pembaruan konten tanpa mengubah waktu tayang.
+        'publish' => [ArticleStatus::Draft, ArticleStatus::InReview, ArticleStatus::Revision, ArticleStatus::Scheduled, ArticleStatus::Published],
+        'schedule' => [ArticleStatus::Draft, ArticleStatus::InReview, ArticleStatus::Revision, ArticleStatus::Scheduled],
+        'review' => [ArticleStatus::Draft, ArticleStatus::InReview, ArticleStatus::Revision, ArticleStatus::Scheduled],
+        'archive' => [ArticleStatus::Published, ArticleStatus::Scheduled],
+        'restore' => [ArticleStatus::Archived],
+    ];
+
+    public static function allows(string $action, Article $article): bool
+    {
+        return in_array($article->status ?? ArticleStatus::Draft, self::ALLOWED_FROM[$action], true);
+    }
+
     public static function submitReview(Article $article): void
     {
         $article->status = ArticleStatus::InReview;

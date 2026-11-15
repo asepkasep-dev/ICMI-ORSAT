@@ -77,13 +77,14 @@ class Index extends Component
     public function publish(int $id): void
     {
         $article = Article::findOrFail($id);
-        $this->authorize('publish', $article);
 
         if ($article->status === ArticleStatus::Archived) {
             $this->dispatch('toast', type: 'error', message: 'Berita diarsipkan harus dipulihkan terlebih dahulu.');
 
             return;
         }
+
+        $this->authorize('publish', $article);
 
         ArticleWorkflow::publish($article);
         $this->dispatch('toast', message: 'Berita "'.$article->title.'" berhasil diterbitkan.');

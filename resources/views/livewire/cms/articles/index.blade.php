@@ -52,8 +52,7 @@
                         @php
                             $isAdmin = auth()->user()->isAdmin();
                             $st = $article->status;
-                            $active = $st !== \App\Enums\ArticleStatus::Archived;
-                            $showMenu = $isAdmin || in_array($st, [\App\Enums\ArticleStatus::Draft, \App\Enums\ArticleStatus::InReview, \App\Enums\ArticleStatus::Revision, \App\Enums\ArticleStatus::Scheduled], true);
+                            $showMenu = $isAdmin || in_array($st, [\App\Enums\ArticleStatus::Draft, \App\Enums\ArticleStatus::InReview, \App\Enums\ArticleStatus::Revision], true);
                         @endphp
                         <tr class="transition hover:bg-forest-50/50" wire:key="article-{{ $article->id }}">
                             <td class="max-w-sm px-5 py-4">
@@ -118,7 +117,7 @@
                                                      class="fixed z-[80] w-56 overflow-hidden rounded-xl border border-forest-100 bg-white py-1.5 shadow-xl shadow-forest-900/15"
                                                      :style="`top: ${top}px; left: ${left}px`"
                                                      role="menu" aria-label="Aksi publikasi berita">
-                                                    @if ($active && $st !== \App\Enums\ArticleStatus::Published)
+                                                    @if ($st !== \App\Enums\ArticleStatus::Published && auth()->user()->can('publish', $article))
                                                         <button type="button" role="menuitem" x-on:click="open = false" wire:click="publish({{ $article->id }})"
                                                                 class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-forest-800 transition hover:bg-forest-50">
                                                             <svg class="h-4 w-4 text-forest-600" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
@@ -132,18 +131,20 @@
                                                             Ajukan untuk Review
                                                         </button>
                                                     @endif
-                                                    @if ($isAdmin && $active)
+                                                    @can('schedule', $article)
                                                         <button type="button" role="menuitem" x-on:click="open = false" wire:click="openSchedule({{ $article->id }})"
                                                                 class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-forest-800 transition hover:bg-forest-50">
                                                             <svg class="h-4 w-4 text-sky-600" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
                                                             {{ $st === \App\Enums\ArticleStatus::Scheduled ? 'Ubah Jadwal' : 'Jadwalkan' }}…
                                                         </button>
+                                                    @endcan
+                                                    @can('review', $article)
                                                         <button type="button" role="menuitem" x-on:click="open = false" wire:click="openRevision({{ $article->id }})"
                                                                 class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-forest-800 transition hover:bg-forest-50">
                                                             <svg class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
                                                             Minta Revisi…
                                                         </button>
-                                                    @endif
+                                                    @endcan
                                                     @if ($isAdmin && in_array($st, [\App\Enums\ArticleStatus::Published, \App\Enums\ArticleStatus::Scheduled], true))
                                                         <button type="button" role="menuitem" x-on:click="open = false" wire:click="archive({{ $article->id }})"
                                                                 class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-forest-800 transition hover:bg-forest-50">

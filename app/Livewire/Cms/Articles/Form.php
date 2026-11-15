@@ -12,6 +12,7 @@ use App\Support\ContentSanitizer;
 use App\Support\MediaStorage;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -19,6 +20,7 @@ class Form extends Component
 {
     use WithFileUploads;
 
+    #[Locked]
     public ?int $articleId = null;
 
     public string $title = '';
@@ -30,6 +32,7 @@ class Form extends Component
     public bool $is_featured = false;
     public string $seo_title = '';
     public string $seo_description = '';
+    #[Locked]
     public ?int $featuredMediaId = null;
     public bool $removeFeatured = false;
 
@@ -225,9 +228,9 @@ class Form extends Component
 
     public function submitReview()
     {
-        $article = $this->persist();
-        $this->authorize('submitReview', $article);
+        $this->authorize('submitReview', $this->currentArticle());
 
+        $article = $this->persist();
         ArticleWorkflow::submitReview($article);
         session()->flash('status', 'Berita "'.$article->title.'" diajukan untuk review Admin.');
 
@@ -236,15 +239,17 @@ class Form extends Component
 
     public function publish()
     {
-        $article = $this->persist();
-        $this->authorize('publish', $article);
+        $current = $this->currentArticle();
 
-        if ($article->status === ArticleStatus::Archived) {
+        if ($current->status === ArticleStatus::Archived) {
             session()->flash('error', 'Berita diarsipkan harus dipulihkan terlebih dahulu sebelum diterbitkan.');
 
             return $this->redirectRoute('cms.articles');
         }
 
+        $this->authorize('publish', $current);
+
+        $article = $this->persist();
         ArticleWorkflow::publish($article);
         session()->flash('status', 'Berita "'.$article->title.'" berhasil diterbitkan.');
 
@@ -253,38 +258,48 @@ class Form extends Component
 
     public function schedule()
     {
-        $article = $this->persist();
-        $this->authorize('schedule', $article);
+        $current = $this->currentArticle();
 
-        $this->validate([
-            'scheduledAt' => ['required', 'date', 'after:now'],
-        ], [], ['scheduledAt' => 'waktu publikasi']);
-
-        if ($article->status === ArticleStatus::Archived) {
+        if ($current->status === ArticleStatus::Archived) {
             session()->flash('error', 'Berita diarsipkan harus dipulihkan terlebih dahulu sebelum dijadwalkan.');
 
             return $this->redirectRoute('cms.articles');
         }
 
-        ArticleWorkflow::schedule($article, Carbon::parse($this->scheduledAt));
-        session()->flash('status', 'Berita "'.$article->title.'" dijadwalkan terbit pada '.Carbon::parse($this->scheduledAt)->translatedFormat('d M Y H:i').'.');
+        $this->authorize('schedule', $current);
+
+        $this->validate([
+            'scheduledAt' => ['required', 'date', 'after:now'],
+        ], [], ['scheduledAt' => 'waktu publikasi']);
+
+        $at = Carbon::parse($this->scheduledAt);
+        $article = $this->persist();
+        ArticleWorkflow::schedule($article, $at);
+        session()->flash('status', 'Berita "'.$article->title.'" dijadwalkan terbit pada '.$at->translatedFormat('d M Y H:i').'.');
 
         return $this->redirectRoute('cms.articles');
     }
 
     public function requestRevision()
     {
-        $article = $this->persist();
-        $this->authorize('review', $article);
+        $this->authorize('review', $this->currentArticle());
 
         $this->validate([
             'revisionNote' => ['required', 'string', 'min:5', 'max:1000'],
         ], [], ['revisionNote' => 'catatan revisi']);
 
+        $article = $this->persist();
         ArticleWorkflow::requestRevision($article, $this->revisionNote);
         session()->flash('status', 'Berita "'.$article->title.'" dikembalikan untuk revisi.');
 
         return $this->redirectRoute('cms.articles');
+    }
+
+    private function currentArticle(): Article
+    {
+        return $this->articleId
+            ? Article::findOrFail($this->articleId)
+            : new Article(['user_id' => auth()->id(), 'status' => ArticleStatus::Draft]);
     }
 
     public function render()

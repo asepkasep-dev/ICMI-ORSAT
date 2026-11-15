@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -187,21 +188,24 @@ class ArticleManagementTest extends TestCase
         $this->assertDatabaseHas('articles', ['id' => $article->id, 'is_featured' => true]);
     }
 
-    public function test_invalid_featured_media_id_is_rejected(): void
+    public function test_featured_media_id_cannot_be_set_from_client(): void
     {
         $writer = User::factory()->create();
         $category = Category::factory()->create();
         $this->actingAs($writer);
 
-        Livewire::test(Form::class)
-            ->set('title', 'Berita Dengan Media Invalid')
-            ->set('content', $this->longContent)
-            ->set('categories', [(string) $category->id])
-            ->set('featuredMediaId', 999999)
-            ->call('save')
-            ->assertHasErrors(['featuredMediaId']);
+        $this->expectException(CannotUpdateLockedPropertyException::class);
 
-        $this->assertDatabaseMissing('articles', ['title' => 'Berita Dengan Media Invalid']);
+        try {
+            Livewire::test(Form::class)
+                ->set('title', 'Berita Dengan Media Invalid')
+                ->set('content', $this->longContent)
+                ->set('categories', [(string) $category->id])
+                ->set('featuredMediaId', 999999)
+                ->call('save');
+        } finally {
+            $this->assertDatabaseMissing('articles', ['title' => 'Berita Dengan Media Invalid']);
+        }
     }
 
     public function test_upload_rejects_non_image_file(): void
